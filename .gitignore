@@ -1,1 +1,25 @@
-/target
+# Rust build output
+/target/
+
+# Cargo package files
+**/*.rs.bk
+Cargo.lock
+
+# If this is a library, you can ignore Cargo.lock.
+# If this is a binary project, you should keep Cargo.lock.
+# Remove the above line if you want to track Cargo.lock.
+
+# IDE and editor folders
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Backup / temp files
+*.log
+*.tmp
+*.bak
+
+# OS-specific files
+.DS_Store
+Thumbs.db
