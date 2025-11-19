@@ -1,4 +1,4 @@
-<h1>⚡ Rust Chat — Real-Time WebSocket Chat Server</h1>
+<h1> Rust Chat — Real-Time WebSocket Chat Server</h1>
 
 <p>
 A fully local, offline-friendly, multi-user chat system built using <strong>Rust</strong>, 
@@ -161,14 +161,4 @@ sudo firewall-cmd --reload
 
 <hr>
 
-<h2> Need Anything Else?</h2>
-<p>I can generate:</p>
-<ul>
-  <li>index.html</li>
-  <li>main.rs</li>
-  <li>Dockerfile</li>
-  <li>Systemd service</li>
-  <li>Tailwind UI version</li>
-  <li>Argon2-based authentication</li>
-</ul>
 <p>No MOree </p>
