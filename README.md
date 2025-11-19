@@ -9,7 +9,7 @@ rooms, login system, and a clean responsive UI.
 
 <hr>
 
-<h2>🚀 Features</h2>
+<h2> Features</h2>
 <ul>
   <li>Real-time WebSocket chat</li>
   <li>Multiple rooms (<code>/join</code>, <code>/rooms</code>, <code>/leave</code>)</li>
@@ -25,7 +25,7 @@ rooms, login system, and a clean responsive UI.
 
 <hr>
 
-<h2>📁 Project Flow</h2>
+<h2> Project Flow</h2>
 
 <pre>
 rust-chat/
@@ -68,7 +68,7 @@ rust-chat/
 
 <hr>
 
-<h2>💬 Chat Commands</h2>
+<h2> Chat Commands</h2>
 
 <table border="1" cellpadding="6">
   <tr>
@@ -87,7 +87,7 @@ rust-chat/
 
 <hr>
 
-<h2>🗂 File Upload & Sharing</h2>
+<h2> File Upload & Sharing</h2>
 
 <p>Click <strong>Upload & Share</strong> in the UI.<br>
 Uploaded files are stored in:</p>
@@ -102,7 +102,7 @@ Uploaded files are stored in:</p>
 
 <hr>
 
-<h2>🌐 Offline / LAN Usage</h2>
+<h2> Offline / LAN Usage</h2>
 
 <p>This chat server works <strong>100% offline</strong>:</p>
 <ul>
@@ -120,7 +120,7 @@ sudo firewall-cmd --reload
 
 <hr>
 
-<h2>🔐 Security Notes</h2>
+<h2> Security Notes</h2>
 
 <ul>
   <li>Passwords use SHA-256 + username salt</li>
@@ -130,7 +130,7 @@ sudo firewall-cmd --reload
 
 <hr>
 
-<h2>🧱 Example users.json</h2>
+<h2> Example users.json</h2>
 
 <pre><code>{
   "alice": {
@@ -142,7 +142,7 @@ sudo firewall-cmd --reload
 
 <hr>
 
-<h2>🚀 Future Improvements</h2>
+<h2>Future Improvements</h2>
 
 <ul>
   <li>Argon2 password hashing</li>
@@ -155,13 +155,13 @@ sudo firewall-cmd --reload
 
 <hr>
 
-<h2>📄 License</h2>
+<h2>License</h2>
 
 <p>MIT — Free to use, modify, and redistribute.</p>
 
 <hr>
 
-<h2>💬 Need Anything Else?</h2>
+<h2> Need Anything Else?</h2>
 <p>I can generate:</p>
 <ul>
   <li>index.html</li>
@@ -171,4 +171,4 @@ sudo firewall-cmd --reload
   <li>Tailwind UI version</li>
   <li>Argon2-based authentication</li>
 </ul>
-<p>Just ask! 🚀</p>
+<p>No MOree </p>
