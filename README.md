@@ -41,7 +41,7 @@ rust-chat/
 
 <hr>
 
-<h2>🛠 Installation & Run</h2>
+<h2> Installation & Run</h2>
 
 <h3>1. Install Rust</h3>
 <pre><code>curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
