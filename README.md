@@ -31,12 +31,12 @@ rooms, login system, and a clean responsive UI.
 rust-chat/
 │
 ├── Cargo.toml
-├── users.json            # usernames + salted SHA256 hashed passwords
-├── uploads/              # stored uploaded files
+├── users.json            
+├── uploads/              
 ├── static/
-│   └── index.html        # frontend UI
+│   └── index.html        
 └── src/
-    └── main.rs           # Rust server code
+    └── main.rs 
 </pre>
 
 <hr>
@@ -59,16 +59,16 @@ rust-chat/
 <h3>3. Open the Chat UI</h3>
 <ul>
   <li>Local machine → <a href="http://localhost:8080">http://localhost:8080</a></li>
-  <li>LAN (WiFi) → <code>http://YOUR_LOCAL_IP:8080</code></li>
+  <li>LAN (WiFi) → <code>http://Your Local ip:8080</code></li>
 </ul>
 
 <p>Find your IP:</p>
-<pre><code>ip a
+<pre><code>ip a -- if u uses linux 
 </code></pre>
 
 <hr>
 
-<h2> Chat Commands</h2>
+<h2> Chat Commands[type this in input where we send msg]</h2>
 
 <table border="1" cellpadding="6">
   <tr>
