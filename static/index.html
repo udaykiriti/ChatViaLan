@@ -26,6 +26,7 @@
         <span class="room-badge" id="currentRoom">#lobby</span>
       </div>
       <div class="header-right">
+        <button class="theme-toggle" id="themeToggle" title="Toggle theme">🌙</button>
         <div class="name-input-wrapper">
           <input type="text" id="nameInput" class="input" placeholder="Your name" />
           <button id="setNameBtn" class="btn">Set</button>
@@ -36,6 +37,10 @@
     <!-- Chat Area -->
     <main class="chat-container glass">
       <div class="messages" id="messages"></div>
+      <div class="typing-indicator" id="typingIndicator">
+        <span id="typingText">Someone is typing</span>
+        <span class="typing-dots"><span>.</span><span>.</span><span>.</span></span>
+      </div>
       <div class="input-area">
         <div class="input-row">
           <input type="text" id="textInput" class="input" placeholder="Type a message or /command..."

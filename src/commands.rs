@@ -1,9 +1,9 @@
 //! Command handling for chat commands.
 
-use std::collections::VecDeque;
+use std::collections::{HashMap, VecDeque};
 use crate::types::{Clients, Histories, HistoryItem, Outgoing, Users};
 use crate::auth::{register_user, verify_login};
-use crate::room::{send_system_to_room, send_user_list_to_room, send_history_to_client_room, broadcast_to_room_and_store, join_room};
+use crate::room::{send_system_to_room, send_user_list_to_room, send_history_to_client_room, broadcast_to_room_and_store, join_room, generate_msg_id};
 use crate::client::{client_name_by_id, client_tx_by_id, make_unique_name, now_ts};
 
 /// Handle all `/` commands from a connected client.
@@ -116,7 +116,15 @@ pub async fn handle_cmd_with_rooms(
                 };
                 if let Some(tx) = maybe_tx {
                     let from = client_name_by_id(clients, client_id).await;
-                    let item = Outgoing::Msg { from: from.clone(), text: text.to_string(), ts: now_ts() };
+                    let msg_id = generate_msg_id();
+                    let item = Outgoing::Msg { 
+                        id: msg_id.clone(), 
+                        from: from.clone(), 
+                        text: text.to_string(), 
+                        ts: now_ts(),
+                        reactions: HashMap::new(),
+                        edited: false,
+                    };
                     if let Ok(s) = serde_json::to_string(&item) {
                         let _ = tx.send(warp::ws::Message::text(s));
                     }
@@ -124,7 +132,15 @@ pub async fn handle_cmd_with_rooms(
                     let room = get_client_room(clients, client_id).await;
                     let mut locked_h = histories.lock().await;
                     let q = locked_h.entry(room).or_insert_with(|| VecDeque::with_capacity(200));
-                    q.push_back(HistoryItem { from: format!("(private) {} -> {}", from, target.trim()), text: text.to_string(), ts: now_ts() });
+                    q.push_back(HistoryItem { 
+                        id: msg_id,
+                        from: format!("(private) {} -> {}", from, target.trim()), 
+                        text: text.to_string(), 
+                        ts: now_ts(),
+                        reactions: HashMap::new(),
+                        edited: false,
+                        deleted: false,
+                    });
                     while q.len() > 200 { q.pop_front(); }
                 } else {
                     send_to_client(clients, client_id, &format!("User '{}' not found in your room", target.trim())).await;
@@ -176,7 +192,15 @@ pub async fn handle_message_with_rooms(
 ) {
     let from = client_name_by_id(clients, client_id).await;
     let room = get_client_room(clients, client_id).await;
-    let item = HistoryItem { from, text: text.to_string(), ts: now_ts() };
+    let item = HistoryItem {
+        id: generate_msg_id(),
+        from,
+        text: text.to_string(),
+        ts: now_ts(),
+        reactions: HashMap::new(),
+        edited: false,
+        deleted: false,
+    };
     broadcast_to_room_and_store(clients, histories, &room, item).await;
 }
 

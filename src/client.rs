@@ -125,6 +125,12 @@ pub async fn client_connected(
                             Ok(Incoming::Msg { .. }) => {
                                 send_system_to_this(&tx, "Please choose a name or login/register before sending messages.");
                             }
+                            Ok(Incoming::Typing { .. }) => {
+                                // Ignore typing during auth phase
+                            }
+                            Ok(Incoming::React { .. }) | Ok(Incoming::Edit { .. }) | Ok(Incoming::Delete { .. }) | Ok(Incoming::MarkRead { .. }) => {
+                                // Ignore these during auth phase
+                            }
                             Err(_) => {
                                 send_system_to_this(&tx, "Please choose a name or login/register before sending messages.");
                             }
@@ -151,6 +157,9 @@ pub async fn client_connected(
         tx: tx.clone(),
         logged_in,
         room: default_room.clone(),
+        last_message_times: Vec::new(),
+        is_typing: false,
+        last_read_msg_id: None,
     };
 
     {
@@ -176,10 +185,74 @@ pub async fn client_connected(
                                 handle_cmd_with_rooms(&client_id, &cmd, &clients, &histories, &users).await;
                             }
                             Ok(Incoming::Msg { text }) => {
-                                handle_message_with_rooms(&client_id, &text, &clients, &histories).await;
+                                // Rate limiting check
+                                if check_rate_limit(&clients, &client_id).await {
+                                    handle_message_with_rooms(&client_id, &text, &clients, &histories).await;
+                                    // Clear typing status after sending
+                                    set_typing_status(&clients, &client_id, false).await;
+                                }
+                            }
+                            Ok(Incoming::Typing { is_typing }) => {
+                                set_typing_status(&clients, &client_id, is_typing).await;
+                                broadcast_typing_status(&clients, &client_id).await;
+                            }
+                            Ok(Incoming::React { msg_id, emoji }) => {
+                                let (room, name) = {
+                                    let locked = clients.lock().await;
+                                    locked.get(&client_id)
+                                        .map(|c| (c.room.clone(), c.name.clone()))
+                                        .unwrap_or_default()
+                                };
+                                crate::room::add_reaction(&clients, &histories, &room, &msg_id, &emoji, &name).await;
+                            }
+                            Ok(Incoming::Edit { msg_id, new_text }) => {
+                                let (room, name) = {
+                                    let locked = clients.lock().await;
+                                    locked.get(&client_id)
+                                        .map(|c| (c.room.clone(), c.name.clone()))
+                                        .unwrap_or_default()
+                                };
+                                let edited = crate::room::edit_message(&clients, &histories, &room, &msg_id, &new_text, &name).await;
+                                if !edited {
+                                    if let Some(tx) = client_tx_by_id(&clients, &client_id).await {
+                                        let msg = crate::types::Outgoing::System { text: "Cannot edit this message".to_string() };
+                                        let _ = tx.send(warp::ws::Message::text(serde_json::to_string(&msg).unwrap()));
+                                    }
+                                }
+                            }
+                            Ok(Incoming::Delete { msg_id }) => {
+                                let (room, name) = {
+                                    let locked = clients.lock().await;
+                                    locked.get(&client_id)
+                                        .map(|c| (c.room.clone(), c.name.clone()))
+                                        .unwrap_or_default()
+                                };
+                                let deleted = crate::room::delete_message(&clients, &histories, &room, &msg_id, &name).await;
+                                if !deleted {
+                                    if let Some(tx) = client_tx_by_id(&clients, &client_id).await {
+                                        let msg = crate::types::Outgoing::System { text: "Cannot delete this message".to_string() };
+                                        let _ = tx.send(warp::ws::Message::text(serde_json::to_string(&msg).unwrap()));
+                                    }
+                                }
+                            }
+                            Ok(Incoming::MarkRead { last_msg_id }) => {
+                                let (room, name) = {
+                                    let mut locked = clients.lock().await;
+                                    if let Some(c) = locked.get_mut(&client_id) {
+                                        c.last_read_msg_id = Some(last_msg_id.clone());
+                                        (c.room.clone(), c.name.clone())
+                                    } else {
+                                        (String::new(), String::new())
+                                    }
+                                };
+                                if !room.is_empty() {
+                                    crate::room::broadcast_read_receipt(&clients, &room, &name, &last_msg_id).await;
+                                }
                             }
                             Err(_) => {
-                                handle_message_with_rooms(&client_id, text, &clients, &histories).await;
+                                if check_rate_limit(&clients, &client_id).await {
+                                    handle_message_with_rooms(&client_id, text, &clients, &histories).await;
+                                }
                             }
                         }
                     }
@@ -244,3 +317,63 @@ pub async fn make_unique_name(clients: &Clients, desired: &str) -> String {
         suffix += 1;
     }
 }
+
+/// Check rate limit: max 5 messages in 10 seconds. Returns true if allowed.
+pub async fn check_rate_limit(clients: &Clients, client_id: &str) -> bool {
+    use std::time::{Duration, Instant};
+    
+    let mut locked = clients.lock().await;
+    if let Some(client) = locked.get_mut(client_id) {
+        let now = Instant::now();
+        let window = Duration::from_secs(10);
+        
+        // Remove old timestamps outside window
+        client.last_message_times.retain(|t| now.duration_since(*t) < window);
+        
+        if client.last_message_times.len() >= 5 {
+            // Rate limited - send warning
+            let msg = crate::types::Outgoing::System {
+                text: "Rate limited: slow down! Max 5 messages per 10 seconds.".to_string(),
+            };
+            if let Ok(s) = serde_json::to_string(&msg) {
+                let _ = client.tx.send(warp::ws::Message::text(s));
+            }
+            return false;
+        }
+        
+        client.last_message_times.push(now);
+    }
+    true
+}
+
+/// Set typing status for a client.
+pub async fn set_typing_status(clients: &Clients, client_id: &str, is_typing: bool) {
+    let mut locked = clients.lock().await;
+    if let Some(client) = locked.get_mut(client_id) {
+        client.is_typing = is_typing;
+    }
+}
+
+/// Broadcast who is typing in the room.
+pub async fn broadcast_typing_status(clients: &Clients, client_id: &str) {
+    let (room, typing_users) = {
+        let locked = clients.lock().await;
+        let room = locked.get(client_id).map(|c| c.room.clone()).unwrap_or_default();
+        let typing: Vec<String> = locked.values()
+            .filter(|c| c.room == room && c.is_typing)
+            .map(|c| c.name.clone())
+            .collect();
+        (room, typing)
+    };
+    
+    let msg = crate::types::Outgoing::Typing { users: typing_users };
+    if let Ok(s) = serde_json::to_string(&msg) {
+        let locked = clients.lock().await;
+        for c in locked.values() {
+            if c.room == room {
+                let _ = c.tx.send(warp::ws::Message::text(s.clone()));
+            }
+        }
+    }
+}
+

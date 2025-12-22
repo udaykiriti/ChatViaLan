@@ -1,12 +1,24 @@
 // ===== Configuration =====
 const wsUrl = (location.protocol === 'https:' ? 'wss://' : 'ws://') + location.host + '/ws';
 const commands = ['/name', '/msg', '/list', '/history', '/join', '/rooms', '/register', '/login', '/help', '/who', '/leave', '/room'];
+const REACTION_EMOJIS = ['👍', '❤️', '😂', '😮', '😢', '🎉'];
+
+// Notification sound (short beep as base64)
+const NOTIFICATION_SOUND = 'data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1peYBymXyagI+Sf5WRj5GLoZeYmJ2Xq6eTk5CRkZmPk5KRkoyTkpKYjZaUk5WRkJGUlZWOk5WVk5KPkpOVlZCSlZWTko+Sk5WVkJKVlZOSj5KTlZWQkpWVk5KPkpOVlZCSlZWTko+Sk5SVkJKVlZOSj5KTlJWQkpWVk5KPkpOUlZCSlZWTko+Sk5SVkJKVlZOSj5KTlJWQkpWVk5KPkpOUlQ==';
+let notificationAudio = null;
+let soundEnabled = true;
 
 // ===== State =====
 let ws = null;
 let connected = false;
 let named = false;
 let currentRoom = 'lobby';
+let typingTimeout = null;
+let isTyping = false;
+let unreadCount = 0;
+let windowFocused = true;
+let myName = '';
+let lastMsgId = null;
 
 // ===== DOM Elements =====
 const $ = id => document.getElementById(id);
@@ -27,6 +39,148 @@ const newRoomInput = $('newRoomInput');
 const joinRoomBtn = $('joinRoomBtn');
 const authMsg = $('authMsg');
 const cmdSuggest = $('cmdSuggest');
+const themeToggle = $('themeToggle');
+const typingIndicator = $('typingIndicator');
+const typingText = $('typingText');
+
+// ===== Theme =====
+function initTheme() {
+    const saved = localStorage.getItem('theme') || 'dark';
+    document.documentElement.setAttribute('data-theme', saved);
+    updateThemeIcon();
+}
+
+function toggleTheme() {
+    const current = document.documentElement.getAttribute('data-theme');
+    const next = current === 'light' ? 'dark' : 'light';
+    document.documentElement.setAttribute('data-theme', next);
+    localStorage.setItem('theme', next);
+    updateThemeIcon();
+}
+
+function updateThemeIcon() {
+    const theme = document.documentElement.getAttribute('data-theme');
+    themeToggle.textContent = theme === 'light' ? '☀️' : '🌙';
+}
+
+// ===== Sound Notifications =====
+function initSound() {
+    notificationAudio = new Audio(NOTIFICATION_SOUND);
+    notificationAudio.volume = 0.3;
+}
+
+function playNotificationSound() {
+    if (soundEnabled && notificationAudio && !windowFocused) {
+        notificationAudio.play().catch(() => { });
+    }
+}
+
+// ===== Unread Count =====
+function updateUnreadCount() {
+    if (unreadCount > 0) {
+        document.title = `(${unreadCount}) LAN Chat`;
+    } else {
+        document.title = 'LAN Chat';
+    }
+}
+
+function incrementUnread() {
+    if (!windowFocused) {
+        unreadCount++;
+        updateUnreadCount();
+    }
+}
+
+function clearUnread() {
+    unreadCount = 0;
+    updateUnreadCount();
+}
+
+// ===== Relative Time =====
+function relativeTime(ts) {
+    const now = Date.now();
+    const diff = now - (ts * 1000);
+    const mins = Math.floor(diff / 60000);
+    const hours = Math.floor(diff / 3600000);
+    const days = Math.floor(diff / 86400000);
+
+    if (mins < 1) return 'just now';
+    if (mins < 60) return `${mins}m ago`;
+    if (hours < 24) return `${hours}h ago`;
+    if (days < 7) return `${days}d ago`;
+    return new Date(ts * 1000).toLocaleDateString();
+}
+
+function updateAllTimestamps() {
+    document.querySelectorAll('.message-time[data-ts]').forEach(el => {
+        el.textContent = relativeTime(parseInt(el.dataset.ts));
+    });
+}
+
+// ===== Typing Indicator =====
+function sendTypingStatus(typing) {
+    if (!connected || !named) return;
+    if (isTyping === typing) return;
+    isTyping = typing;
+    ws.send(JSON.stringify({ type: 'typing', is_typing: typing }));
+}
+
+function handleTypingIndicator(users) {
+    const others = users.filter(u => u !== myName);
+    if (others.length === 0) {
+        typingIndicator.classList.remove('visible');
+    } else {
+        typingIndicator.classList.add('visible');
+        typingText.textContent = others.length === 1
+            ? `${others[0]} is typing`
+            : `${others.length} people are typing`;
+    }
+}
+
+// ===== Mentions =====
+function highlightMentions(text) {
+    return text.replace(/@(\w+)/g, (match, name) => {
+        const isMentioned = name.toLowerCase() === myName.toLowerCase();
+        const cls = isMentioned ? 'mention mention-me' : 'mention';
+        return `<span class="${cls}">${match}</span>`;
+    });
+}
+
+// ===== Reactions =====
+function createReactionBar(msgId, reactions = {}) {
+    let html = '<div class="reaction-bar">';
+
+    // Existing reactions
+    for (const [emoji, users] of Object.entries(reactions)) {
+        if (users.length > 0) {
+            const isMine = users.includes(myName);
+            html += `<button class="reaction-btn ${isMine ? 'active' : ''}" data-msg-id="${msgId}" data-emoji="${emoji}">${emoji} ${users.length}</button>`;
+        }
+    }
+
+    // Add reaction button
+    html += `<button class="add-reaction-btn" data-msg-id="${msgId}">+</button>`;
+    html += '</div>';
+    return html;
+}
+
+function createReactionPicker(msgId) {
+    let html = '<div class="reaction-picker">';
+    REACTION_EMOJIS.forEach(emoji => {
+        html += `<button class="picker-emoji" data-msg-id="${msgId}" data-emoji="${emoji}">${emoji}</button>`;
+    });
+    html += '</div>';
+    return html;
+}
+
+// ===== Message Actions =====
+function createMessageActions(msgId, from) {
+    if (from !== myName) return '';
+    return `<div class="message-actions">
+    <button class="action-btn edit-btn" data-msg-id="${msgId}" title="Edit">✏️</button>
+    <button class="action-btn delete-btn" data-msg-id="${msgId}" title="Delete">🗑️</button>
+  </div>`;
+}
 
 // ===== WebSocket Connection =====
 function connect() {
@@ -48,9 +202,23 @@ function connect() {
             const data = JSON.parse(e.data);
             switch (data.type) {
                 case 'system': handleSystem(data.text); break;
-                case 'msg': appendMessage(data.from, data.text, data.ts); break;
+                case 'msg':
+                    appendMessage(data.id, data.from, data.text, data.ts, data.reactions || {}, data.edited);
+                    if (data.from !== myName) {
+                        playNotificationSound();
+                        incrementUnread();
+                    }
+                    break;
                 case 'list': updateUsers(data.users || []); break;
-                case 'history': (data.items || []).forEach(m => appendMessage(m.from, m.text, m.ts)); break;
+                case 'history':
+                    (data.items || []).forEach(m => appendMessage(m.id, m.from, m.text, m.ts, m.reactions || {}, m.edited));
+                    break;
+                case 'typing': handleTypingIndicator(data.users || []); break;
+                case 'reaction': handleReactionUpdate(data.msg_id, data.emoji, data.user, data.added); break;
+                case 'edit': handleEditUpdate(data.msg_id, data.new_text); break;
+                case 'delete': handleDeleteUpdate(data.msg_id); break;
+                case 'readreceipt': handleReadReceipt(data.user, data.last_msg_id); break;
+                case 'mention': handleMention(data.from, data.text, data.mentioned); break;
                 default: handleSystem(e.data);
             }
         } catch { handleSystem(e.data); }
@@ -69,6 +237,74 @@ function connect() {
         connStatus.textContent = 'error';
         statusDot.classList.remove('connected');
     };
+}
+
+// ===== Handle Updates =====
+function handleReactionUpdate(msgId, emoji, user, added) {
+    const msgEl = document.querySelector(`[data-msg-id="${msgId}"]`);
+    if (!msgEl) return;
+
+    let reactionBar = msgEl.querySelector('.reaction-bar');
+    if (!reactionBar) {
+        const content = msgEl.querySelector('.message-content');
+        content.insertAdjacentHTML('afterend', createReactionBar(msgId, {}));
+        reactionBar = msgEl.querySelector('.reaction-bar');
+    }
+
+    let btn = reactionBar.querySelector(`[data-emoji="${emoji}"]`);
+    if (added) {
+        if (btn) {
+            const count = parseInt(btn.textContent.match(/\d+/)?.[0] || '0') + 1;
+            btn.textContent = `${emoji} ${count}`;
+            if (user === myName) btn.classList.add('active');
+        } else {
+            const addBtn = reactionBar.querySelector('.add-reaction-btn');
+            addBtn.insertAdjacentHTML('beforebegin',
+                `<button class="reaction-btn ${user === myName ? 'active' : ''}" data-msg-id="${msgId}" data-emoji="${emoji}">${emoji} 1</button>`);
+        }
+    } else {
+        if (btn) {
+            const count = parseInt(btn.textContent.match(/\d+/)?.[0] || '1') - 1;
+            if (count <= 0) {
+                btn.remove();
+            } else {
+                btn.textContent = `${emoji} ${count}`;
+                if (user === myName) btn.classList.remove('active');
+            }
+        }
+    }
+}
+
+function handleEditUpdate(msgId, newText) {
+    const msgEl = document.querySelector(`[data-msg-id="${msgId}"]`);
+    if (!msgEl) return;
+    const content = msgEl.querySelector('.message-content');
+    content.innerHTML = linkify(highlightMentions(escapeHtml(newText)));
+
+    let editedLabel = msgEl.querySelector('.edited-label');
+    if (!editedLabel) {
+        const header = msgEl.querySelector('.message-header');
+        header.insertAdjacentHTML('beforeend', '<span class="edited-label">(edited)</span>');
+    }
+}
+
+function handleDeleteUpdate(msgId) {
+    const msgEl = document.querySelector(`[data-msg-id="${msgId}"]`);
+    if (msgEl) {
+        msgEl.classList.add('deleted');
+        msgEl.innerHTML = '<div class="deleted-text">This message was deleted</div>';
+    }
+}
+
+function handleReadReceipt(user, lastMsgId) {
+    // Could show read indicators - simplified for now
+}
+
+function handleMention(from, text, mentioned) {
+    if (mentioned.toLowerCase() === myName.toLowerCase()) {
+        playNotificationSound();
+        incrementUnread();
+    }
 }
 
 // ===== Message Handling =====
@@ -90,6 +326,8 @@ function handleSystem(text) {
     }
 
     if (text.includes("Your name is") || text.includes("Logged in")) {
+        const m = text.match(/'([^']+)'/);
+        if (m) myName = m[1];
         named = true;
         updateInputState();
         sendCommand('/list');
@@ -104,19 +342,32 @@ function appendSystem(text) {
     messagesEl.scrollTop = messagesEl.scrollHeight;
 }
 
-function appendMessage(from, text, ts) {
+function appendMessage(id, from, text, ts, reactions = {}, edited = false) {
     const div = document.createElement('div');
     div.className = 'message';
-    const time = new Date(ts * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    div.dataset.msgId = id;
+
+    const editedLabel = edited ? '<span class="edited-label">(edited)</span>' : '';
+
     div.innerHTML = `
     <div class="message-header">
       <span class="message-author">${escapeHtml(from)}</span>
-      <span class="message-time">${time}</span>
+      <span class="message-time" data-ts="${ts}">${relativeTime(ts)}</span>
+      ${editedLabel}
+      ${createMessageActions(id, from)}
     </div>
-    <div class="message-content">${linkify(escapeHtml(text))}</div>
+    <div class="message-content">${linkify(highlightMentions(escapeHtml(text)))}</div>
+    ${createReactionBar(id, reactions)}
   `;
     messagesEl.appendChild(div);
     messagesEl.scrollTop = messagesEl.scrollHeight;
+
+    lastMsgId = id;
+
+    // Send read receipt
+    if (windowFocused && connected) {
+        ws.send(JSON.stringify({ type: 'markread', last_msg_id: id }));
+    }
 }
 
 function escapeHtml(s) {
@@ -155,6 +406,22 @@ function sendCommand(cmd) {
 function sendMessage(msg) {
     if (!connected) return appendSystem('Not connected.');
     ws.send(JSON.stringify({ type: 'msg', text: msg }));
+    sendTypingStatus(false);
+}
+
+function sendReaction(msgId, emoji) {
+    if (!connected) return;
+    ws.send(JSON.stringify({ type: 'react', msg_id: msgId, emoji }));
+}
+
+function sendEdit(msgId, newText) {
+    if (!connected) return;
+    ws.send(JSON.stringify({ type: 'edit', msg_id: msgId, new_text: newText }));
+}
+
+function sendDelete(msgId) {
+    if (!connected) return;
+    ws.send(JSON.stringify({ type: 'delete', msg_id: msgId }));
 }
 
 // ===== Input State =====
@@ -169,11 +436,15 @@ function updateInputState() {
 
 // ===== Event Listeners =====
 function initEventListeners() {
+    // Theme toggle
+    themeToggle.onclick = toggleTheme;
+
     // Name setting
     setNameBtn.onclick = () => {
         const n = nameInput.value.trim();
         if (!n) return;
         sendCommand('/name ' + n);
+        myName = n;
         named = true;
         updateInputState();
     };
@@ -187,9 +458,9 @@ function initEventListeners() {
         hideCmdSuggest();
     };
 
-    // Keyboard handling
+    // Keyboard handling + typing detection
     textInput.onkeydown = (e) => {
-        if (e.key === 'Enter') sendBtn.click();
+        if (e.key === 'Enter') { sendBtn.click(); return; }
         if (cmdSuggest.style.display === 'block') {
             const items = [...cmdSuggest.querySelectorAll('li')];
             const active = cmdSuggest.querySelector('.active');
@@ -202,14 +473,24 @@ function initEventListeners() {
         }
     };
 
-    // Command suggestions
+    // Command suggestions + typing indicator
     textInput.oninput = () => {
         const v = textInput.value.trim();
         if (v.startsWith('/')) {
             const matches = commands.filter(c => c.startsWith(v.toLowerCase()));
             if (matches.length) showCmdSuggest(matches);
             else hideCmdSuggest();
-        } else hideCmdSuggest();
+            sendTypingStatus(false);
+        } else {
+            hideCmdSuggest();
+            if (v.length > 0) {
+                sendTypingStatus(true);
+                clearTimeout(typingTimeout);
+                typingTimeout = setTimeout(() => sendTypingStatus(false), 2000);
+            } else {
+                sendTypingStatus(false);
+            }
+        }
     };
 
     // Room/User clicks
@@ -221,7 +502,7 @@ function initEventListeners() {
     userList.onclick = (e) => {
         const item = e.target.closest('.user-item');
         if (item) {
-            textInput.value = '/msg ' + item.dataset.user + ' ';
+            textInput.value = '@' + item.dataset.user + ' ';
             textInput.focus();
         }
     };
@@ -242,7 +523,7 @@ function initEventListeners() {
     });
 
     document.querySelectorAll('.switch-tab').forEach(btn => {
-        btn.onclick = () => document.querySelector(`.auth-tab[data-tab="${btn.dataset.target}"]`).click();
+        btn.onclick = () => document.querySelector(`.auth-tab[data-target="${btn.dataset.target}"]`).click();
     });
 
     // Login/Register
@@ -281,6 +562,11 @@ function initEventListeners() {
     // Close suggestions on outside click
     document.onclick = (e) => {
         if (!cmdSuggest.contains(e.target) && e.target !== textInput) hideCmdSuggest();
+
+        // Close any open reaction pickers
+        if (!e.target.closest('.add-reaction-btn') && !e.target.closest('.reaction-picker')) {
+            document.querySelectorAll('.reaction-picker').forEach(p => p.remove());
+        }
     };
 
     // Escape to close
@@ -294,6 +580,58 @@ function initEventListeners() {
             textInput.focus();
         }
     };
+
+    // Reaction clicks (delegated)
+    messagesEl.onclick = (e) => {
+        const reactionBtn = e.target.closest('.reaction-btn');
+        if (reactionBtn) {
+            sendReaction(reactionBtn.dataset.msgId, reactionBtn.dataset.emoji);
+            return;
+        }
+
+        const addReactionBtn = e.target.closest('.add-reaction-btn');
+        if (addReactionBtn) {
+            document.querySelectorAll('.reaction-picker').forEach(p => p.remove());
+            addReactionBtn.insertAdjacentHTML('afterend', createReactionPicker(addReactionBtn.dataset.msgId));
+            return;
+        }
+
+        const pickerEmoji = e.target.closest('.picker-emoji');
+        if (pickerEmoji) {
+            sendReaction(pickerEmoji.dataset.msgId, pickerEmoji.dataset.emoji);
+            document.querySelectorAll('.reaction-picker').forEach(p => p.remove());
+            return;
+        }
+
+        const editBtn = e.target.closest('.edit-btn');
+        if (editBtn) {
+            const msgEl = document.querySelector(`[data-msg-id="${editBtn.dataset.msgId}"]`);
+            const content = msgEl.querySelector('.message-content');
+            const currentText = content.textContent;
+            const newText = prompt('Edit message:', currentText);
+            if (newText && newText !== currentText) {
+                sendEdit(editBtn.dataset.msgId, newText);
+            }
+            return;
+        }
+
+        const deleteBtn = e.target.closest('.delete-btn');
+        if (deleteBtn) {
+            if (confirm('Delete this message?')) {
+                sendDelete(deleteBtn.dataset.msgId);
+            }
+        }
+    };
+
+    // Window focus/blur for unread count
+    window.onfocus = () => {
+        windowFocused = true;
+        clearUnread();
+        if (lastMsgId && connected) {
+            ws.send(JSON.stringify({ type: 'markread', last_msg_id: lastMsgId }));
+        }
+    };
+    window.onblur = () => { windowFocused = false; };
 }
 
 // ===== Command Suggestions UI =====
@@ -321,9 +659,14 @@ function showAuthMsg(msg, isError = false) {
 
 // ===== Initialize App =====
 function init() {
+    initTheme();
+    initSound();
     initEventListeners();
     updateInputState();
     connect();
+
+    // Update timestamps every minute
+    setInterval(updateAllTimestamps, 60000);
 }
 
 // Start when DOM is ready
