@@ -34,7 +34,7 @@ function connect() {
                 case 'reaction': handleReactionUpdate(data.msg_id, data.emoji, data.user, data.added); break;
                 case 'edit': handleEditUpdate(data.msg_id, data.new_text); break;
                 case 'delete': handleDeleteUpdate(data.msg_id); break;
-                case 'readreceipt': break; // Future: show read indicators
+                case 'readreceipt': break;
                 case 'mention':
                     if (data.mentioned.toLowerCase() === myName.toLowerCase()) {
                         playNotificationSound();
@@ -76,6 +76,8 @@ function handleSystem(text) {
         if (m) {
             currentRoom = m[1];
             DOM.roomBadge.textContent = '#' + currentRoom;
+            // Refresh room list to update active state
+            sendCommand('/rooms');
         }
         sendCommand('/list');
     }
@@ -86,6 +88,7 @@ function handleSystem(text) {
         named = true;
         updateInputState();
         sendCommand('/list');
+        sendCommand('/rooms');
     }
 }
 

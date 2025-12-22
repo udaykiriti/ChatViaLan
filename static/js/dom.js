@@ -14,6 +14,7 @@ const DOM = {
     uploadBtn: null,
     uploadMsg: null,
     userList: null,
+    userCount: null,
     roomList: null,
     newRoomInput: null,
     joinRoomBtn: null,
@@ -37,6 +38,7 @@ function initDOM() {
     DOM.uploadBtn = $('uploadBtn');
     DOM.uploadMsg = $('uploadMsg');
     DOM.userList = $('userList');
+    DOM.userCount = $('userCount');
     DOM.roomList = $('roomList');
     DOM.newRoomInput = $('newRoomInput');
     DOM.joinRoomBtn = $('joinRoomBtn');

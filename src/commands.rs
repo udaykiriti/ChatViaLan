@@ -4,7 +4,7 @@ use std::collections::{HashMap, VecDeque};
 use crate::types::{Clients, Histories, HistoryItem, Outgoing, Users};
 use crate::auth::{register_user, verify_login};
 use crate::room::{send_system_to_room, send_user_list_to_room, send_history_to_client_room, broadcast_to_room_and_store, join_room, generate_msg_id};
-use crate::client::{client_name_by_id, client_tx_by_id, make_unique_name, now_ts};
+use crate::helpers::{client_name_by_id, client_tx_by_id, make_unique_name, now_ts};
 
 /// Handle all `/` commands from a connected client.
 pub async fn handle_cmd_with_rooms(

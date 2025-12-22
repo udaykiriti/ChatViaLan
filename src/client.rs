@@ -1,6 +1,5 @@
 //! WebSocket client handling and connection lifecycle.
 
-use std::time::SystemTime;
 use futures::{SinkExt, StreamExt};
 use tokio::sync::mpsc;
 use uuid::Uuid;
@@ -9,6 +8,9 @@ use crate::types::{Client, Clients, Histories, Incoming, Outgoing, Tx, Users};
 use crate::auth::{register_user, verify_login};
 use crate::room::{send_system_to_room, send_history_to_client_room, send_user_list_to_room};
 use crate::commands::{handle_cmd_with_rooms, handle_message_with_rooms};
+use crate::helpers::{make_unique_name, client_tx_by_id};
+use crate::rate_limit::check_rate_limit;
+use crate::typing::{set_typing_status, broadcast_typing_status};
 
 /// Handle a new WebSocket connection.
 pub async fn client_connected(
@@ -185,10 +187,8 @@ pub async fn client_connected(
                                 handle_cmd_with_rooms(&client_id, &cmd, &clients, &histories, &users).await;
                             }
                             Ok(Incoming::Msg { text }) => {
-                                // Rate limiting check
                                 if check_rate_limit(&clients, &client_id).await {
                                     handle_message_with_rooms(&client_id, &text, &clients, &histories).await;
-                                    // Clear typing status after sending
                                     set_typing_status(&clients, &client_id, false).await;
                                 }
                             }
@@ -215,7 +215,7 @@ pub async fn client_connected(
                                 let edited = crate::room::edit_message(&clients, &histories, &room, &msg_id, &new_text, &name).await;
                                 if !edited {
                                     if let Some(tx) = client_tx_by_id(&clients, &client_id).await {
-                                        let msg = crate::types::Outgoing::System { text: "Cannot edit this message".to_string() };
+                                        let msg = Outgoing::System { text: "Cannot edit this message".to_string() };
                                         let _ = tx.send(warp::ws::Message::text(serde_json::to_string(&msg).unwrap()));
                                     }
                                 }
@@ -230,7 +230,7 @@ pub async fn client_connected(
                                 let deleted = crate::room::delete_message(&clients, &histories, &room, &msg_id, &name).await;
                                 if !deleted {
                                     if let Some(tx) = client_tx_by_id(&clients, &client_id).await {
-                                        let msg = crate::types::Outgoing::System { text: "Cannot delete this message".to_string() };
+                                        let msg = Outgoing::System { text: "Cannot delete this message".to_string() };
                                         let _ = tx.send(warp::ws::Message::text(serde_json::to_string(&msg).unwrap()));
                                     }
                                 }
@@ -281,99 +281,3 @@ pub async fn client_connected(
     drop(tx);
     let _ = forward_task.await;
 }
-
-/// Get client name by ID.
-pub async fn client_name_by_id(clients: &Clients, id: &str) -> String {
-    let locked = clients.lock().await;
-    locked.get(id).map(|c| c.name.clone()).unwrap_or_else(|| id.to_string())
-}
-
-/// Get client tx channel by ID.
-pub async fn client_tx_by_id(clients: &Clients, id: &str) -> Option<Tx> {
-    let locked = clients.lock().await;
-    locked.get(id).map(|c| c.tx.clone())
-}
-
-/// Get current Unix timestamp.
-pub fn now_ts() -> u64 {
-    SystemTime::now()
-        .duration_since(SystemTime::UNIX_EPOCH)
-        .map(|d| d.as_secs())
-        .unwrap_or(0)
-}
-
-/// Make a username unique among currently connected clients.
-pub async fn make_unique_name(clients: &Clients, desired: &str) -> String {
-    let mut candidate = desired.to_string();
-    let mut suffix = 1usize;
-    loop {
-        let locked = clients.lock().await;
-        let collision = locked.values().any(|c| c.name.eq_ignore_ascii_case(&candidate));
-        drop(locked);
-        if !collision {
-            return candidate;
-        }
-        candidate = format!("{}-{}", desired, suffix);
-        suffix += 1;
-    }
-}
-
-/// Check rate limit: max 5 messages in 10 seconds. Returns true if allowed.
-pub async fn check_rate_limit(clients: &Clients, client_id: &str) -> bool {
-    use std::time::{Duration, Instant};
-    
-    let mut locked = clients.lock().await;
-    if let Some(client) = locked.get_mut(client_id) {
-        let now = Instant::now();
-        let window = Duration::from_secs(10);
-        
-        // Remove old timestamps outside window
-        client.last_message_times.retain(|t| now.duration_since(*t) < window);
-        
-        if client.last_message_times.len() >= 5 {
-            // Rate limited - send warning
-            let msg = crate::types::Outgoing::System {
-                text: "Rate limited: slow down! Max 5 messages per 10 seconds.".to_string(),
-            };
-            if let Ok(s) = serde_json::to_string(&msg) {
-                let _ = client.tx.send(warp::ws::Message::text(s));
-            }
-            return false;
-        }
-        
-        client.last_message_times.push(now);
-    }
-    true
-}
-
-/// Set typing status for a client.
-pub async fn set_typing_status(clients: &Clients, client_id: &str, is_typing: bool) {
-    let mut locked = clients.lock().await;
-    if let Some(client) = locked.get_mut(client_id) {
-        client.is_typing = is_typing;
-    }
-}
-
-/// Broadcast who is typing in the room.
-pub async fn broadcast_typing_status(clients: &Clients, client_id: &str) {
-    let (room, typing_users) = {
-        let locked = clients.lock().await;
-        let room = locked.get(client_id).map(|c| c.room.clone()).unwrap_or_default();
-        let typing: Vec<String> = locked.values()
-            .filter(|c| c.room == room && c.is_typing)
-            .map(|c| c.name.clone())
-            .collect();
-        (room, typing)
-    };
-    
-    let msg = crate::types::Outgoing::Typing { users: typing_users };
-    if let Ok(s) = serde_json::to_string(&msg) {
-        let locked = clients.lock().await;
-        for c in locked.values() {
-            if c.room == room {
-                let _ = c.tx.send(warp::ws::Message::text(s.clone()));
-            }
-        }
-    }
-}
-

@@ -1,0 +1,258 @@
+/* ===== Messages Container ===== */
+.messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: 16px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+/* ===== Message Wrapper ===== */
+.message {
+    display: flex;
+    flex-direction: column;
+    max-width: 60%;
+    animation: fadeIn 0.15s ease;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(8px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* ===== Sent Messages (Right aligned) ===== */
+.message.sent {
+    align-self: flex-end;
+    align-items: flex-end;
+}
+
+.message.sent .message-bubble {
+    background: var(--sent-bubble);
+    color: white;
+    border-radius: 18px 18px 4px 18px;
+    padding: 10px 14px;
+}
+
+.message.sent .message-header {
+    justify-content: flex-end;
+}
+
+.message.sent .message-author {
+    display: none;
+}
+
+.message.sent .message-time {
+    color: var(--text-muted);
+}
+
+/* ===== Received Messages (Left aligned) ===== */
+.message.received {
+    align-self: flex-start;
+    align-items: flex-start;
+}
+
+.message.received .message-bubble {
+    background: var(--received-bubble);
+    color: var(--text);
+    border-radius: 18px 18px 18px 4px;
+    padding: 10px 14px;
+}
+
+/* ===== System Messages (Centered) ===== */
+.message.system {
+    align-self: center;
+    max-width: 100%;
+    text-align: center;
+}
+
+.message.system .message-bubble {
+    background: transparent;
+    color: var(--text-muted);
+    font-size: 0.8rem;
+    padding: 6px 12px;
+}
+
+.message.system .message-header {
+    display: none;
+}
+
+.message.system .reaction-bar {
+    display: none;
+}
+
+/* ===== Message Header ===== */
+.message-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 3px;
+    padding: 0 4px;
+}
+
+.message-author {
+    font-weight: 600;
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+}
+
+.message-time {
+    font-size: 0.65rem;
+    color: var(--text-muted);
+}
+
+/* ===== Message Bubble ===== */
+.message-bubble {
+    word-wrap: break-word;
+    line-height: 1.4;
+    font-size: 0.95rem;
+    position: relative;
+}
+
+.message-bubble a {
+    color: inherit;
+    text-decoration: underline;
+}
+
+/* ===== Edited & Deleted ===== */
+.edited-label {
+    font-size: 0.6rem;
+    opacity: 0.6;
+    font-style: italic;
+    margin-left: 4px;
+}
+
+.message.deleted .message-bubble {
+    background: transparent !important;
+    border: 1px dashed var(--border);
+}
+
+.deleted-text {
+    color: var(--text-muted);
+    font-style: italic;
+    font-size: 0.85rem;
+}
+
+/* ===== Mentions ===== */
+.mention {
+    color: #58a6ff;
+    background: rgba(0, 132, 255, 0.15);
+    padding: 1px 4px;
+    border-radius: 4px;
+    font-weight: 500;
+}
+
+.message.sent .mention {
+    color: #ffffff;
+    background: rgba(255, 255, 255, 0.2);
+}
+
+/* ===== Reactions ===== */
+.reaction-bar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin-top: 4px;
+    padding: 0 4px;
+}
+
+.reaction-btn {
+    padding: 2px 8px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    font-size: 0.7rem;
+    cursor: pointer;
+    color: var(--text);
+}
+
+.reaction-btn.active {
+    background: var(--primary);
+    color: white;
+    border-color: var(--primary);
+}
+
+.add-reaction-btn {
+    width: 22px;
+    height: 22px;
+    background: var(--surface);
+    border: 1px dashed var(--border);
+    border-radius: 50%;
+    font-size: 11px;
+    cursor: pointer;
+    color: var(--text-muted);
+}
+
+.reaction-picker {
+    position: absolute;
+    background: var(--surface-elevated);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 6px;
+    display: flex;
+    gap: 4px;
+    z-index: 100;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.picker-emoji {
+    width: 32px;
+    height: 32px;
+    border: none;
+    background: transparent;
+    font-size: 18px;
+    cursor: pointer;
+    border-radius: 4px;
+}
+
+.picker-emoji:hover {
+    background: var(--surface);
+}
+
+/* ===== Message Actions ===== */
+.message-actions {
+    display: none;
+    gap: 4px;
+    margin-left: auto;
+}
+
+.message:hover .message-actions {
+    display: flex;
+}
+
+.action-btn {
+    width: 20px;
+    height: 20px;
+    border: none;
+    background: transparent;
+    font-size: 10px;
+    cursor: pointer;
+    border-radius: 4px;
+    opacity: 0.6;
+}
+
+.action-btn:hover {
+    opacity: 1;
+    background: rgba(0, 0, 0, 0.1);
+}
+
+/* ===== Scrollbar ===== */
+.messages::-webkit-scrollbar {
+    width: 6px;
+}
+
+.messages::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.messages::-webkit-scrollbar-thumb {
+    background: var(--border);
+    border-radius: 3px;
+}

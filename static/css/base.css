@@ -1,0 +1,49 @@
+/* ===== CSS Variables ===== */
+:root {
+    /* Dark theme - Messenger inspired */
+    --bg: #0a0a0a;
+    --bg-secondary: #1a1a1a;
+    --surface: #242526;
+    --surface-elevated: #3a3b3c;
+    --border: #3e4042;
+    --text: #e4e6eb;
+    --text-secondary: #b0b3b8;
+    --text-muted: #8a8d91;
+    --primary: #0084ff;
+    --primary-hover: #0078e8;
+    --sent-bubble: #0084ff;
+    --received-bubble: #3a3b3c;
+    --success: #31a24c;
+    --danger: #f02849;
+    --radius: 20px;
+    --radius-sm: 12px;
+}
+
+[data-theme="light"] {
+    --bg: #ffffff;
+    --bg-secondary: #f0f2f5;
+    --surface: #ffffff;
+    --surface-elevated: #e4e6eb;
+    --border: #dddfe2;
+    --text: #050505;
+    --text-secondary: #65676b;
+    --text-muted: #8a8d91;
+    --sent-bubble: #0084ff;
+    --received-bubble: #e4e6eb;
+}
+
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    height: 100vh;
+    overflow: hidden;
+}

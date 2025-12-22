@@ -2,117 +2,104 @@
 <html lang="en">
 
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>LAN Chat</title>
-  <link rel="icon" type="image/svg+xml" href="favicon.svg" />
-  <link rel="stylesheet" href="styles.css" />
+  <!-- Modular CSS -->
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/sidebar.css">
+  <link rel="stylesheet" href="css/chat.css">
+  <link rel="stylesheet" href="css/messages.css">
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
 </head>
 
 <body>
-
   <div class="app">
-    <!-- Header -->
-    <header class="header glass">
-      <div class="logo">
-        <div class="logo-icon">⚡</div>
-        <span class="logo-text">LAN Chat</span>
+    <!-- Left Sidebar: Rooms & Users -->
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <h2>Chats</h2>
+        <button class="theme-toggle" id="themeToggle">🌙</button>
       </div>
-      <div class="status-group">
-        <div class="status">
-          <span class="status-dot" id="statusDot"></span>
-          <span id="connectionStatus">connecting...</span>
-        </div>
-        <span class="room-badge" id="currentRoom">#lobby</span>
-      </div>
-      <div class="header-right">
-        <button class="theme-toggle" id="themeToggle" title="Toggle theme">🌙</button>
-        <div class="name-input-wrapper">
-          <input type="text" id="nameInput" class="input" placeholder="Your name" />
-          <button id="setNameBtn" class="btn">Set</button>
-        </div>
-      </div>
-    </header>
 
-    <!-- Chat Area -->
-    <main class="chat-container glass">
-      <div class="messages" id="messages"></div>
-      <div class="typing-indicator" id="typingIndicator">
-        <span id="typingText">Someone is typing</span>
-        <span class="typing-dots"><span>.</span><span>.</span><span>.</span></span>
-      </div>
-      <div class="input-area">
-        <div class="input-row">
-          <input type="text" id="textInput" class="input" placeholder="Type a message or /command..."
-            autocomplete="off" />
-          <button id="sendBtn" class="btn">Send</button>
-        </div>
-        <div class="upload-row">
-          <label class="file-label">
-            📎 Attach
-            <input type="file" id="fileInput" hidden />
-          </label>
-          <button id="uploadBtn" class="btn btn-ghost">Upload</button>
-          <span class="upload-msg" id="uploadMsg"></span>
-        </div>
-      </div>
-    </main>
-
-    <!-- Sidebar -->
-    <aside class="sidebar" id="sidebar">
+      <!-- Rooms Section -->
       <div class="sidebar-section">
-        <div class="sidebar-title">Users Online</div>
+        <div class="section-title">Rooms</div>
+        <ul class="room-list" id="roomList"></ul>
+        <div class="new-room">
+          <input type="text" id="newRoomInput" placeholder="New room...">
+          <button id="joinRoomBtn">+</button>
+        </div>
+      </div>
+
+      <!-- Users Section -->
+      <div class="sidebar-section">
+        <div class="section-title">Online <span id="userCount">(0)</span></div>
         <ul class="user-list" id="userList"></ul>
       </div>
 
-      <div class="sidebar-section">
-        <div class="sidebar-title">Rooms</div>
-        <ul class="room-list" id="roomList"></ul>
-        <div class="room-input-row">
-          <input type="text" id="newRoomInput" class="input" placeholder="Room name" />
-          <button id="joinRoomBtn" class="btn btn-ghost">Join</button>
-        </div>
-      </div>
-
-      <div class="auth-panel">
+      <!-- Auth Section -->
+      <div class="sidebar-section auth-section">
         <div class="auth-tabs">
           <button class="auth-tab active" data-tab="login">Login</button>
           <button class="auth-tab" data-tab="register">Register</button>
         </div>
-
         <div class="auth-content active" id="loginTab">
-          <div class="form-group">
-            <label class="form-label">Username</label>
-            <input type="text" id="loginUser" class="form-input" placeholder="Enter username" />
-          </div>
-          <div class="form-group">
-            <label class="form-label">Password</label>
-            <input type="password" id="loginPass" class="form-input" placeholder="Enter password" />
-          </div>
-          <button id="loginBtn" class="auth-btn">Login</button>
-          <div class="auth-switch">
-            No account? <button class="switch-tab" data-target="register">Sign up</button>
-          </div>
+          <input type="text" id="loginUser" placeholder="Username">
+          <input type="password" id="loginPass" placeholder="Password">
+          <button id="loginBtn">Login</button>
         </div>
-
         <div class="auth-content" id="registerTab">
-          <div class="form-group">
-            <label class="form-label">Username</label>
-            <input type="text" id="regUser" class="form-input" placeholder="Choose username" />
-          </div>
-          <div class="form-group">
-            <label class="form-label">Password</label>
-            <input type="password" id="regPass" class="form-input" placeholder="Choose password" />
-          </div>
-          <button id="regBtn" class="auth-btn">Create Account</button>
-          <div class="auth-switch">
-            Have account? <button class="switch-tab" data-target="login">Login</button>
-          </div>
+          <input type="text" id="regUser" placeholder="Username">
+          <input type="password" id="regPass" placeholder="Password">
+          <button id="regBtn">Register</button>
         </div>
-
         <div class="auth-msg" id="authMsg"></div>
       </div>
     </aside>
+
+    <!-- Main Chat Area -->
+    <main class="chat-main">
+      <!-- Chat Header -->
+      <header class="chat-header">
+        <div class="header-left">
+          <span class="status-dot" id="statusDot"></span>
+          <span id="connectionStatus">connecting...</span>
+        </div>
+        <div class="header-center">
+          <span class="room-name" id="currentRoom">#lobby</span>
+        </div>
+        <div class="header-right">
+          <input type="text" id="nameInput" placeholder="Your name...">
+          <button id="setNameBtn">Set</button>
+        </div>
+      </header>
+
+      <!-- Messages Area -->
+      <div class="messages" id="messages"></div>
+
+      <!-- Typing Indicator -->
+      <div class="typing-indicator" id="typingIndicator">
+        <span class="typing-text" id="typingText"></span>
+        <span class="typing-dots"><span></span><span></span><span></span></span>
+      </div>
+
+      <!-- Input Area -->
+      <div class="chat-input">
+        <div class="input-row">
+          <label class="attach-btn">
+            <input type="file" id="fileInput" hidden>
+            📎
+          </label>
+          <input type="text" id="textInput" placeholder="Type a message..." disabled>
+          <button id="sendBtn" disabled>Send</button>
+        </div>
+        <div class="upload-row">
+          <button id="uploadBtn" disabled>Upload</button>
+          <span id="uploadMsg"></span>
+        </div>
+      </div>
+    </main>
   </div>
 
   <!-- Command Suggestions -->
@@ -129,7 +116,6 @@
   <script src="js/websocket.js"></script>
   <script src="js/events.js"></script>
   <script src="js/main.js"></script>
-
 </body>
 
 </html>

@@ -3,7 +3,7 @@
 use std::collections::{HashMap, VecDeque};
 use uuid::Uuid;
 use crate::types::{Clients, Histories, HistoryItem, Outgoing, Tx};
-use crate::client::{client_name_by_id, client_tx_by_id, now_ts};
+use crate::helpers::{client_name_by_id, client_tx_by_id, now_ts};
 
 /// Generate unique message ID.
 pub fn generate_msg_id() -> String {

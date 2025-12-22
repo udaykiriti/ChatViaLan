@@ -6,6 +6,9 @@
 //! - room.rs: Room management
 //! - commands.rs: Command handling
 //! - client.rs: WebSocket client lifecycle
+//! - helpers.rs: Client helper functions
+//! - rate_limit.rs: Rate limiting
+//! - typing.rs: Typing indicators
 //! - upload.rs: File uploads
 
 mod types;
@@ -13,6 +16,9 @@ mod auth;
 mod room;
 mod commands;
 mod client;
+mod helpers;
+mod rate_limit;
+mod typing;
 mod upload;
 
 use std::collections::{HashMap, VecDeque};
