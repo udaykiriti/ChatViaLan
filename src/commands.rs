@@ -1,7 +1,8 @@
 //! Command handling for chat commands.
 
 use std::collections::{HashMap, VecDeque};
-use crate::types::{Clients, Histories, HistoryItem, Outgoing, Users};
+use tracing::info;
+use crate::types::{Clients, Histories, HistoryItem, Outgoing, Users, RoomInfo};
 use crate::auth::{register_user, verify_login};
 use crate::room::{send_system_to_room, send_user_list_to_room, send_history_to_client_room, broadcast_to_room_and_store, join_room, generate_msg_id};
 use crate::helpers::{client_name_by_id, client_tx_by_id, make_unique_name, now_ts};
@@ -26,12 +27,12 @@ pub async fn handle_cmd_with_rooms(
             }
         }
         "/rooms" => {
-            let room_list: Vec<crate::types::RoomInfo> = {
-                let locked_h = histories.lock().await;
-                let locked_c = clients.lock().await;
+            let room_list: Vec<RoomInfo> = {
+                let locked_h = histories.read().await;
+                let locked_c = clients.read().await;
                 locked_h.keys().map(|room_name| {
                     let member_count = locked_c.values().filter(|c| &c.room == room_name).count();
-                    crate::types::RoomInfo {
+                    RoomInfo {
                         name: room_name.clone(),
                         members: member_count,
                     }
@@ -50,7 +51,7 @@ pub async fn handle_cmd_with_rooms(
         }
         "/room" => {
             let room = {
-                let locked = clients.lock().await;
+                let locked = clients.read().await;
                 locked.get(client_id).map(|c| c.room.clone()).unwrap_or_else(|| "lobby".to_string())
             };
             send_to_client(clients, client_id, &format!("Current room: {}", room)).await;
@@ -63,16 +64,18 @@ pub async fn handle_cmd_with_rooms(
                     return;
                 }
                 let unique_name = make_unique_name(clients, newname).await;
+                let old_name = client_name_by_id(clients, client_id).await;
                 {
-                    let mut locked = clients.lock().await;
+                    let mut locked = clients.write().await;
                     if let Some(c) = locked.get_mut(client_id) {
                         c.name = unique_name.clone();
                     }
                 }
                 let room = get_client_room(clients, client_id).await;
-                send_system_to_room(clients, histories, &room, &format!("-- {} is now known as {} --", client_name_by_id(clients, client_id).await, unique_name)).await;
+                send_system_to_room(clients, histories, &room, &format!("-- {} is now known as {} --", old_name, unique_name)).await;
                 send_user_list_to_room(clients, &room).await;
                 send_to_client(clients, client_id, &format!("Your name is now '{}'", unique_name)).await;
+                info!("Client {} (id: {}) changed name to {}", old_name, client_id, unique_name);
             }
         }
         "/list" => {
@@ -96,7 +99,7 @@ pub async fn handle_cmd_with_rooms(
                 if verify_login(users, username.trim(), password.trim()).await {
                     let unique_name = make_unique_name(clients, username.trim()).await;
                     {
-                        let mut locked = clients.lock().await;
+                        let mut locked = clients.write().await;
                         if let Some(c) = locked.get_mut(client_id) {
                             c.name = unique_name.clone();
                             c.logged_in = true;
@@ -106,6 +109,7 @@ pub async fn handle_cmd_with_rooms(
                     send_system_to_room(clients, histories, &room, &format!("-- {} logged in --", unique_name)).await;
                     send_user_list_to_room(clients, &room).await;
                     send_to_client(clients, client_id, &format!("Logged in as '{}'", unique_name)).await;
+                    info!("Client {} logged in as {}", client_id, unique_name);
                 } else {
                     send_to_client(clients, client_id, "Login failed: invalid credentials").await;
                 }
@@ -121,7 +125,7 @@ pub async fn handle_cmd_with_rooms(
             if let (Some(target), Some(text)) = (parts.next(), parts.next()) {
                 let target_name = target.trim().to_lowercase();
                 let maybe_tx = {
-                    let locked = clients.lock().await;
+                    let locked = clients.read().await;
                     let current_room = locked.get(client_id).map(|x| x.room.clone()).unwrap_or_else(|| "lobby".to_string());
                     locked.values()
                         .find(|c| c.name.to_lowercase() == target_name && c.room == current_room)
@@ -143,7 +147,7 @@ pub async fn handle_cmd_with_rooms(
                     }
                     // Store in history
                     let room = get_client_room(clients, client_id).await;
-                    let mut locked_h = histories.lock().await;
+                    let mut locked_h = histories.write().await;
                     let q = locked_h.entry(room).or_insert_with(|| VecDeque::with_capacity(200));
                     q.push_back(HistoryItem { 
                         id: msg_id,
@@ -179,7 +183,7 @@ pub async fn handle_cmd_with_rooms(
         "/who" => {
             let room = get_client_room(clients, client_id).await;
             let user_info: Vec<String> = {
-                let locked = clients.lock().await;
+                let locked = clients.read().await;
                 locked.values()
                     .filter(|c| c.room == room)
                     .map(|c| {
@@ -227,6 +231,6 @@ async fn send_to_client(clients: &Clients, client_id: &str, text: &str) {
 
 /// Helper: get client's current room.
 async fn get_client_room(clients: &Clients, client_id: &str) -> String {
-    let locked = clients.lock().await;
+    let locked = clients.read().await;
     locked.get(client_id).map(|c| c.room.clone()).unwrap_or_else(|| "lobby".to_string())
 }

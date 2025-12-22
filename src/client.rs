@@ -3,6 +3,7 @@
 use futures::{SinkExt, StreamExt};
 use tokio::sync::mpsc;
 use uuid::Uuid;
+use tracing::{info, warn};
 
 use crate::types::{Client, Clients, Histories, Incoming, Outgoing, Tx, Users};
 use crate::auth::{register_user, verify_login};
@@ -145,7 +146,7 @@ pub async fn client_connected(
                 }
             }
             Err(e) => {
-                eprintln!("websocket error during auth for {}: {}", addr, e);
+                warn!("websocket error during auth for {}: {}", addr, e);
                 drop(tx);
                 let _ = forward_task.await;
                 return;
@@ -165,11 +166,11 @@ pub async fn client_connected(
     };
 
     {
-        let mut locked = clients.lock().await;
+        let mut locked = clients.write().await;
         locked.insert(client_id.clone(), client);
     }
 
-    println!("New connection: {} (id: {}, name: {}, logged_in={}, room={})", addr, client_id, chosen_name, logged_in, default_room);
+    info!("New connection: {} (id: {}, name: {}, logged_in={}, room={})", addr, client_id, chosen_name, logged_in, default_room);
 
     // Announce in lobby
     send_system_to_room(&clients, &histories, &default_room, &format!("-- {} joined the room --", chosen_name)).await;
@@ -198,7 +199,7 @@ pub async fn client_connected(
                             }
                             Ok(Incoming::React { msg_id, emoji }) => {
                                 let (room, name) = {
-                                    let locked = clients.lock().await;
+                                    let locked = clients.read().await;
                                     locked.get(&client_id)
                                         .map(|c| (c.room.clone(), c.name.clone()))
                                         .unwrap_or_default()
@@ -207,7 +208,7 @@ pub async fn client_connected(
                             }
                             Ok(Incoming::Edit { msg_id, new_text }) => {
                                 let (room, name) = {
-                                    let locked = clients.lock().await;
+                                    let locked = clients.read().await;
                                     locked.get(&client_id)
                                         .map(|c| (c.room.clone(), c.name.clone()))
                                         .unwrap_or_default()
@@ -222,7 +223,7 @@ pub async fn client_connected(
                             }
                             Ok(Incoming::Delete { msg_id }) => {
                                 let (room, name) = {
-                                    let locked = clients.lock().await;
+                                    let locked = clients.read().await;
                                     locked.get(&client_id)
                                         .map(|c| (c.room.clone(), c.name.clone()))
                                         .unwrap_or_default()
@@ -237,7 +238,7 @@ pub async fn client_connected(
                             }
                             Ok(Incoming::MarkRead { last_msg_id }) => {
                                 let (room, name) = {
-                                    let mut locked = clients.lock().await;
+                                    let mut locked = clients.write().await;
                                     if let Some(c) = locked.get_mut(&client_id) {
                                         c.last_read_msg_id = Some(last_msg_id.clone());
                                         (c.room.clone(), c.name.clone())
@@ -261,7 +262,7 @@ pub async fn client_connected(
                 }
             }
             Err(e) => {
-                eprintln!("websocket error for {}: {}", addr, e);
+                warn!("websocket error for {}: {}", addr, e);
                 break;
             }
         }
@@ -269,13 +270,14 @@ pub async fn client_connected(
 
     // Cleanup
     let left_room = {
-        let mut locked = clients.lock().await;
+        let mut locked = clients.write().await;
         locked.remove(&client_id).map(|c| c.room)
     };
 
     if let Some(room) = left_room {
         send_system_to_room(&clients, &histories, &room, &format!("-- {} left the room --", chosen_name)).await;
         send_user_list_to_room(&clients, &room).await;
+        info!("Client disconnected: {} (name: {}, room: {})", client_id, chosen_name, room);
     }
 
     drop(tx);

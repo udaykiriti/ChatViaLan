@@ -57,6 +57,43 @@
     justify-content: center;
 }
 
+/* ===== Search Box ===== */
+.search-box {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.search-box input {
+    width: 100%;
+    padding: 8px 32px 8px 12px;
+    border: none;
+    background: var(--surface);
+    border-radius: 8px;
+    color: var(--text);
+    font-size: 0.85rem;
+}
+
+.search-box input::placeholder {
+    color: var(--text-muted);
+}
+
+.clear-search {
+    position: absolute;
+    right: 8px;
+    width: 20px;
+    height: 20px;
+    border: none;
+    background: transparent;
+    color: var(--text-muted);
+    cursor: pointer;
+    font-size: 14px;
+}
+
+.clear-search.hidden {
+    display: none;
+}
+
 .sidebar-section {
     padding: 10px 12px;
     border-bottom: 1px solid var(--border);
@@ -69,20 +106,13 @@
     text-transform: uppercase;
     letter-spacing: 0.5px;
     margin-bottom: 6px;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-}
-
-.section-title .refresh-icon {
-    font-size: 0.6rem;
-    opacity: 0.5;
 }
 
 /* ===== Room List ===== */
-.room-list {
+.room-list,
+.dm-list {
     list-style: none;
-    max-height: 200px;
+    max-height: 160px;
     overflow-y: auto;
 }
 
@@ -218,9 +248,47 @@
     flex-shrink: 0;
 }
 
+.dm-btn {
+    margin-left: auto;
+    width: 24px;
+    height: 24px;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    font-size: 14px;
+    opacity: 0;
+    transition: opacity 0.15s;
+}
+
+.user-item:hover .dm-btn {
+    opacity: 1;
+}
+
+/* ===== Keyboard Shortcuts ===== */
+.shortcuts-section {
+    margin-top: auto;
+}
+
+.shortcuts-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    font-size: 0.75rem;
+    color: var(--text-muted);
+}
+
+.shortcuts-list kbd {
+    display: inline-block;
+    padding: 2px 6px;
+    background: var(--surface);
+    border-radius: 4px;
+    font-family: inherit;
+    font-size: 0.7rem;
+    margin-right: 4px;
+}
+
 /* ===== Auth Section ===== */
 .auth-section {
-    margin-top: auto;
     padding: 12px;
 }
 
@@ -287,4 +355,25 @@
     border-radius: 6px;
     font-size: 0.85rem;
     margin-top: 8px;
+}
+
+@keyframes pulse {
+    0% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0.6;
+    }
+
+    100% {
+        opacity: 1;
+    }
+}
+
+.auth-content button.loading {
+    opacity: 0.7;
+    cursor: wait;
+    animation: pulse 1.5s infinite ease-in-out;
+    pointer-events: none;
 }

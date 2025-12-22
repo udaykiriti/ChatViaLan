@@ -25,11 +25,22 @@ function createReactionPicker(msgId) {
 }
 
 function createMessageActions(msgId, from) {
-    if (from !== myName) return '';
-    return `<div class="message-actions">
-    <button class="action-btn edit-btn" data-msg-id="${msgId}" title="Edit">✏️</button>
-    <button class="action-btn delete-btn" data-msg-id="${msgId}" title="Delete">🗑️</button>
-  </div>`;
+    let html = '<div class="message-actions">';
+
+    // Reply button (everyone can reply)
+    html += `<button class="action-btn reply-btn" data-msg-id="${msgId}" title="Reply">↩️</button>`;
+
+    // Edit/Delete only for own messages
+    if (from === myName) {
+        html += `<button class="action-btn edit-btn" data-msg-id="${msgId}" title="Edit">✏️</button>`;
+        html += `<button class="action-btn delete-btn" data-msg-id="${msgId}" title="Delete">🗑️</button>`;
+    }
+
+    // Pin button
+    html += `<button class="action-btn pin-btn" data-msg-id="${msgId}" title="Pin">📌</button>`;
+
+    html += '</div>';
+    return html;
 }
 
 function handleReactionUpdate(msgId, emoji, user, added) {
@@ -80,6 +91,10 @@ function handleEditUpdate(msgId, newText) {
         bubble.innerHTML = linkify(highlightMentions(escapeHtml(newText)));
     }
 
+    // Update in allMessages
+    const msg = allMessages.find(m => m.id === msgId);
+    if (msg) msg.text = newText;
+
     let editedLabel = msgEl.querySelector('.edited-label');
     if (!editedLabel) {
         const header = msgEl.querySelector('.message-header');
@@ -95,4 +110,8 @@ function handleDeleteUpdate(msgId) {
         msgEl.classList.add('deleted');
         msgEl.innerHTML = '<div class="message-bubble"><span class="deleted-text">This message was deleted</span></div>';
     }
+
+    // Remove from allMessages
+    const idx = allMessages.findIndex(m => m.id === msgId);
+    if (idx >= 0) allMessages.splice(idx, 1);
 }

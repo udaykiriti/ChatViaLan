@@ -3,20 +3,20 @@
 use std::collections::{HashMap, VecDeque};
 use std::sync::Arc;
 use std::time::Instant;
-use tokio::sync::{mpsc, Mutex};
+use tokio::sync::{mpsc, RwLock};
 use serde::{Deserialize, Serialize};
 
 /// Sender channel for WebSocket messages to a client.
 pub type Tx = mpsc::UnboundedSender<warp::ws::Message>;
 
 /// Connected clients map: client_id -> Client
-pub type Clients = Arc<Mutex<HashMap<String, Client>>>;
+pub type Clients = Arc<RwLock<HashMap<String, Client>>>;
 
 /// Per-room message histories: room_name -> VecDeque<HistoryItem>
-pub type Histories = Arc<Mutex<HashMap<String, VecDeque<HistoryItem>>>>;
+pub type Histories = Arc<RwLock<HashMap<String, VecDeque<HistoryItem>>>>;
 
 /// Registered users: username -> password_hash
-pub type Users = Arc<Mutex<HashMap<String, String>>>;
+pub type Users = Arc<RwLock<HashMap<String, String>>>;
 
 /// Represents a connected client.
 #[derive(Clone)]

@@ -16,6 +16,7 @@ const DOM = {
     userList: null,
     userCount: null,
     roomList: null,
+    dmList: null,
     newRoomInput: null,
     joinRoomBtn: null,
     authMsg: null,
@@ -27,6 +28,14 @@ const DOM = {
     sidebar: null,
     sidebarOverlay: null,
     closeSidebar: null,
+    searchInput: null,
+    clearSearch: null,
+    searchResults: null,
+    searchItems: null,
+    closeSearch: null,
+    emojiPicker: null,
+    emojiBtn: null,
+    pinnedMessages: null,
 };
 
 function initDOM() {
@@ -44,6 +53,7 @@ function initDOM() {
     DOM.userList = $('userList');
     DOM.userCount = $('userCount');
     DOM.roomList = $('roomList');
+    DOM.dmList = $('dmList');
     DOM.newRoomInput = $('newRoomInput');
     DOM.joinRoomBtn = $('joinRoomBtn');
     DOM.authMsg = $('authMsg');
@@ -55,6 +65,14 @@ function initDOM() {
     DOM.sidebar = $('sidebar');
     DOM.sidebarOverlay = $('sidebarOverlay');
     DOM.closeSidebar = $('closeSidebar');
+    DOM.searchInput = $('searchInput');
+    DOM.clearSearch = $('clearSearch');
+    DOM.searchResults = $('searchResults');
+    DOM.searchItems = $('searchItems');
+    DOM.closeSearch = $('closeSearch');
+    DOM.emojiPicker = $('emojiPicker');
+    DOM.emojiBtn = $('emojiBtn');
+    DOM.pinnedMessages = $('pinnedMessages');
 }
 
 // ===== Mobile Sidebar Toggle =====

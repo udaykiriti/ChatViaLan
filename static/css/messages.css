@@ -12,7 +12,7 @@
 .message {
     display: flex;
     flex-direction: column;
-    max-width: 60%;
+    max-width: 70%;
     animation: fadeIn 0.15s ease;
 }
 
@@ -28,7 +28,7 @@
     }
 }
 
-/* ===== Sent Messages (Right aligned) ===== */
+/* ===== Sent Messages ===== */
 .message.sent {
     align-self: flex-end;
     align-items: flex-end;
@@ -53,7 +53,7 @@
     color: var(--text-muted);
 }
 
-/* ===== Received Messages (Left aligned) ===== */
+/* ===== Received Messages ===== */
 .message.received {
     align-self: flex-start;
     align-items: flex-start;
@@ -66,7 +66,7 @@
     padding: 10px 14px;
 }
 
-/* ===== System Messages (Centered) ===== */
+/* ===== System Messages ===== */
 .message.system {
     align-self: center;
     max-width: 100%;
@@ -80,10 +80,7 @@
     padding: 6px 12px;
 }
 
-.message.system .message-header {
-    display: none;
-}
-
+.message.system .message-header,
 .message.system .reaction-bar {
     display: none;
 }
@@ -106,6 +103,7 @@
 .message-time {
     font-size: 0.65rem;
     color: var(--text-muted);
+    cursor: help;
 }
 
 /* ===== Message Bubble ===== */
@@ -119,6 +117,58 @@
 .message-bubble a {
     color: inherit;
     text-decoration: underline;
+}
+
+/* ===== Image Preview ===== */
+.image-link {
+    display: block;
+    margin-top: 6px;
+}
+
+.image-preview {
+    max-width: 200px;
+    max-height: 150px;
+    border-radius: 8px;
+    object-fit: cover;
+    cursor: pointer;
+    transition: transform 0.15s;
+}
+
+.image-preview:hover {
+    transform: scale(1.02);
+}
+
+/* ===== Link Preview ===== */
+.link-preview {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    color: inherit !important;
+    word-break: break-all;
+}
+
+/* ===== Reply Preview ===== */
+.reply-preview {
+    background: rgba(255, 255, 255, 0.1);
+    padding: 6px 10px;
+    border-radius: 8px;
+    margin-bottom: 6px;
+    font-size: 0.8rem;
+    border-left: 3px solid var(--primary);
+}
+
+.message.received .reply-preview {
+    background: var(--surface);
+}
+
+.reply-author {
+    font-weight: 600;
+    color: var(--primary);
+    margin-right: 6px;
+}
+
+.reply-text {
+    color: var(--text-muted);
 }
 
 /* ===== Edited & Deleted ===== */
@@ -154,6 +204,33 @@
     background: rgba(255, 255, 255, 0.2);
 }
 
+/* ===== Message Actions ===== */
+.message-actions {
+    display: none;
+    gap: 4px;
+    margin-left: auto;
+}
+
+.message:hover .message-actions {
+    display: flex;
+}
+
+.action-btn {
+    width: 20px;
+    height: 20px;
+    border: none;
+    background: transparent;
+    font-size: 12px;
+    cursor: pointer;
+    border-radius: 4px;
+    opacity: 0.6;
+}
+
+.action-btn:hover {
+    opacity: 1;
+    background: rgba(0, 0, 0, 0.1);
+}
+
 /* ===== Reactions ===== */
 .reaction-bar {
     display: flex;
@@ -161,6 +238,7 @@
     gap: 4px;
     margin-top: 4px;
     padding: 0 4px;
+    position: relative;
 }
 
 .reaction-btn {
@@ -191,14 +269,14 @@
 }
 
 .reaction-picker {
-    position: absolute;
+    position: fixed;
     background: var(--surface-elevated);
     border: 1px solid var(--border);
-    border-radius: var(--radius-sm);
+    border-radius: 8px;
     padding: 6px;
     display: flex;
     gap: 4px;
-    z-index: 100;
+    z-index: 1000;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
 }
 
@@ -214,33 +292,6 @@
 
 .picker-emoji:hover {
     background: var(--surface);
-}
-
-/* ===== Message Actions ===== */
-.message-actions {
-    display: none;
-    gap: 4px;
-    margin-left: auto;
-}
-
-.message:hover .message-actions {
-    display: flex;
-}
-
-.action-btn {
-    width: 20px;
-    height: 20px;
-    border: none;
-    background: transparent;
-    font-size: 10px;
-    cursor: pointer;
-    border-radius: 4px;
-    opacity: 0.6;
-}
-
-.action-btn:hover {
-    opacity: 1;
-    background: rgba(0, 0, 0, 0.1);
 }
 
 /* ===== Scrollbar ===== */

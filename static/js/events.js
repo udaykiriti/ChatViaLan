@@ -40,7 +40,11 @@ function initEventListeners() {
     // Theme toggle
     DOM.themeToggle.onclick = toggleTheme;
 
-    // Name setting
+    // Name setting (Enter key support)
+    DOM.nameInput.onkeydown = (e) => {
+        if (e.key === 'Enter') DOM.setNameBtn.click();
+    };
+
     DOM.setNameBtn.onclick = () => {
         const n = DOM.nameInput.value.trim();
         if (!n) return;
@@ -57,11 +61,26 @@ function initEventListeners() {
         t.startsWith('/') ? sendCommand(t) : sendMessage(t);
         DOM.textInput.value = '';
         hideCmdSuggest();
+        closeEmojiPicker();
     };
 
-    // Keyboard handling
+    // Keyboard shortcuts
     DOM.textInput.onkeydown = (e) => {
-        if (e.key === 'Enter') { DOM.sendBtn.click(); return; }
+        // Enter to send
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            DOM.sendBtn.click();
+            return;
+        }
+
+        // Escape to close things
+        if (e.key === 'Escape') {
+            hideCmdSuggest();
+            closeEmojiPicker();
+            return;
+        }
+
+        // Command suggestions navigation
         if (DOM.cmdSuggest.style.display === 'block') {
             const items = [...DOM.cmdSuggest.querySelectorAll('li')];
             const active = DOM.cmdSuggest.querySelector('.active');
@@ -73,6 +92,24 @@ function initEventListeners() {
             if (items[idx]) items[idx].classList.add('active');
         }
     };
+
+    // Global keyboard shortcuts
+    document.addEventListener('keydown', (e) => {
+        // Escape to close modals
+        if (e.key === 'Escape') {
+            hideCmdSuggest();
+            closeEmojiPicker();
+            hideSearchResults();
+            closeSidebar();
+        }
+
+        // / to focus input (if not already focused)
+        if (e.key === '/' && document.activeElement !== DOM.textInput && document.activeElement.tagName !== 'INPUT') {
+            e.preventDefault();
+            DOM.textInput.focus();
+            DOM.textInput.value = '/';
+        }
+    });
 
     // Input handling
     DOM.textInput.oninput = () => {
@@ -94,23 +131,86 @@ function initEventListeners() {
         }
     };
 
+    // Search
+    if (DOM.searchInput) {
+        DOM.searchInput.oninput = () => {
+            const q = DOM.searchInput.value;
+            DOM.clearSearch.classList.toggle('hidden', !q);
+            searchMessages(q);
+        };
+
+        DOM.searchInput.onkeydown = (e) => {
+            if (e.key === 'Escape') {
+                DOM.searchInput.value = '';
+                hideSearchResults();
+            }
+        };
+    }
+
+    if (DOM.clearSearch) {
+        DOM.clearSearch.onclick = () => {
+            DOM.searchInput.value = '';
+            DOM.clearSearch.classList.add('hidden');
+            hideSearchResults();
+        };
+    }
+
+    if (DOM.closeSearch) {
+        DOM.closeSearch.onclick = hideSearchResults;
+    }
+
+    // Emoji picker
+    if (DOM.emojiBtn) {
+        DOM.emojiBtn.onclick = (e) => {
+            e.stopPropagation();
+            toggleEmojiPicker();
+        };
+    }
+
+    if (DOM.emojiPicker) {
+        DOM.emojiPicker.onclick = (e) => {
+            const btn = e.target.closest('.emoji-item');
+            if (btn) {
+                insertEmoji(btn.dataset.emoji);
+            }
+        };
+    }
+
     // Room/User clicks
     DOM.roomList.onclick = (e) => {
         const item = e.target.closest('.room-item');
-        if (item) sendCommand('/join ' + item.dataset.room);
+        if (item) {
+            sendCommand('/join ' + item.dataset.room);
+            closeSidebar();
+        }
     };
 
     DOM.userList.onclick = (e) => {
+        // DM button
+        const dmBtn = e.target.closest('.dm-btn');
+        if (dmBtn) {
+            DOM.textInput.value = `/msg ${dmBtn.dataset.user} `;
+            DOM.textInput.focus();
+            closeSidebar();
+            return;
+        }
+
+        // User item click for @mention
         const item = e.target.closest('.user-item');
         if (item) {
             DOM.textInput.value = '@' + item.dataset.user + ' ';
             DOM.textInput.focus();
+            closeSidebar();
         }
     };
 
     DOM.joinRoomBtn.onclick = () => {
         const r = DOM.newRoomInput.value.trim();
-        if (r) { sendCommand('/join ' + r); DOM.newRoomInput.value = ''; }
+        if (r) { sendCommand('/join ' + r); DOM.newRoomInput.value = ''; closeSidebar(); }
+    };
+
+    DOM.newRoomInput.onkeydown = (e) => {
+        if (e.key === 'Enter') DOM.joinRoomBtn.click();
     };
 
     // Auth tabs
@@ -123,17 +223,44 @@ function initEventListeners() {
         };
     });
 
-    // Login/Register
+    // Login/Register with Enter key
+    $('loginUser').onkeydown = (e) => { if (e.key === 'Enter') $('loginPass').focus(); };
+    $('loginPass').onkeydown = (e) => { if (e.key === 'Enter') $('loginBtn').click(); };
+    $('regUser').onkeydown = (e) => { if (e.key === 'Enter') $('regPass').focus(); };
+    $('regPass').onkeydown = (e) => { if (e.key === 'Enter') $('regBtn').click(); };
+
     $('loginBtn').onclick = () => {
         const u = $('loginUser').value.trim(), p = $('loginPass').value;
         if (!u || !p) return showAuthMsg('Fill all fields', true);
+
+        const btn = $('loginBtn');
+        btn.classList.add('loading');
+        btn.textContent = 'Authenticating...';
+
         sendCommand(`/login ${u} ${p}`);
+
+        // Remove loading state after 5 seconds if no response
+        setTimeout(() => {
+            btn.classList.remove('loading');
+            btn.textContent = 'Login';
+        }, 5000);
     };
 
     $('regBtn').onclick = () => {
         const u = $('regUser').value.trim(), p = $('regPass').value;
         if (!u || !p) return showAuthMsg('Fill all fields', true);
+
+        const btn = $('regBtn');
+        btn.classList.add('loading');
+        btn.textContent = 'Processing...';
+
         sendCommand(`/register ${u} ${p}`);
+
+        // Remove loading state after 5 seconds if no response
+        setTimeout(() => {
+            btn.classList.remove('loading');
+            btn.textContent = 'Register';
+        }, 5000);
     };
 
     // File upload
@@ -156,15 +283,16 @@ function initEventListeners() {
         setTimeout(() => DOM.uploadMsg.textContent = '', 3000);
     };
 
-    // Close suggestions
+    // Close suggestions / emoji picker on outside click
     document.onclick = (e) => {
         if (!DOM.cmdSuggest.contains(e.target) && e.target !== DOM.textInput) hideCmdSuggest();
         if (!e.target.closest('.add-reaction-btn') && !e.target.closest('.reaction-picker')) {
             document.querySelectorAll('.reaction-picker').forEach(p => p.remove());
         }
+        if (!e.target.closest('.emoji-picker') && !e.target.closest('.emoji-btn')) {
+            closeEmojiPicker();
+        }
     };
-
-    document.onkeydown = (e) => { if (e.key === 'Escape') hideCmdSuggest(); };
 
     DOM.cmdSuggest.onclick = (e) => {
         if (e.target.tagName === 'LI') {
@@ -185,7 +313,14 @@ function initEventListeners() {
         const addReactionBtn = e.target.closest('.add-reaction-btn');
         if (addReactionBtn) {
             document.querySelectorAll('.reaction-picker').forEach(p => p.remove());
-            addReactionBtn.insertAdjacentHTML('afterend', createReactionPicker(addReactionBtn.dataset.msgId));
+            const rect = addReactionBtn.getBoundingClientRect();
+            const pickerHtml = createReactionPicker(addReactionBtn.dataset.msgId);
+            document.body.insertAdjacentHTML('beforeend', pickerHtml);
+            const picker = document.querySelector('.reaction-picker');
+            if (picker) {
+                picker.style.top = (rect.bottom + 4) + 'px';
+                picker.style.left = rect.left + 'px';
+            }
             return;
         }
 
@@ -212,6 +347,22 @@ function initEventListeners() {
         const deleteBtn = e.target.closest('.delete-btn');
         if (deleteBtn && confirm('Delete this message?')) {
             sendDelete(deleteBtn.dataset.msgId);
+        }
+
+        const replyBtn = e.target.closest('.reply-btn');
+        if (replyBtn) {
+            const msgId = replyBtn.dataset.msgId;
+            const msg = allMessages.find(m => m.id === msgId);
+            if (msg) {
+                DOM.textInput.placeholder = `Replying to ${msg.from}...`;
+                DOM.textInput.dataset.replyTo = msgId;
+                DOM.textInput.focus();
+            }
+        }
+
+        const pinBtn = e.target.closest('.pin-btn');
+        if (pinBtn) {
+            sendCommand(`/pin ${pinBtn.dataset.msgId}`);
         }
     };
 

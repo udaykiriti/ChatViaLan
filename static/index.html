@@ -5,6 +5,11 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>LAN Chat</title>
+  
+  <!-- Prism.js for syntax highlighting -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css">
+  
+  <!-- Modular CSS -->
   <link rel="stylesheet" href="css/base.css">
   <link rel="stylesheet" href="css/sidebar.css">
   <link rel="stylesheet" href="css/chat.css">
@@ -15,6 +20,9 @@
 <body>
   <!-- Sidebar Overlay (mobile) -->
   <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+  <!-- Emoji Picker Popup -->
+  <div class="emoji-picker" id="emojiPicker"></div>
 
   <div class="app">
     <!-- Left Sidebar -->
@@ -27,6 +35,14 @@
         </div>
       </div>
 
+      <!-- Search -->
+      <div class="sidebar-section">
+        <div class="search-box">
+          <input type="text" id="searchInput" placeholder="🔍 Search messages...">
+          <button id="clearSearch" class="clear-search hidden">✕</button>
+        </div>
+      </div>
+
       <!-- Rooms -->
       <div class="sidebar-section">
         <div class="section-title">Rooms</div>
@@ -35,6 +51,12 @@
           <input type="text" id="newRoomInput" placeholder="New room...">
           <button id="joinRoomBtn">+</button>
         </div>
+      </div>
+
+      <!-- Direct Messages -->
+      <div class="sidebar-section">
+        <div class="section-title">Direct Messages</div>
+        <ul class="dm-list" id="dmList"></ul>
       </div>
 
       <!-- Online Users -->
@@ -61,6 +83,17 @@
         </div>
         <div class="auth-msg" id="authMsg"></div>
       </div>
+
+      <!-- Markdown Help -->
+      <div class="sidebar-section shortcuts-section">
+        <div class="section-title">Formatting</div>
+        <div class="shortcuts-list">
+          <span><code>**bold**</code></span>
+          <span><code>*italic*</code></span>
+          <span><code>`code`</code></span>
+          <span><code>```lang</code></span>
+        </div>
+      </div>
     </aside>
 
     <!-- Main Chat -->
@@ -80,7 +113,20 @@
         </div>
       </header>
 
+      <!-- Pinned Messages -->
+      <div class="pinned-messages hidden" id="pinnedMessages"></div>
+
+      <!-- Messages -->
       <div class="messages" id="messages"></div>
+
+      <!-- Search Results -->
+      <div class="search-results hidden" id="searchResults">
+        <div class="search-header">
+          <span>Search Results</span>
+          <button id="closeSearch">✕</button>
+        </div>
+        <div class="search-items" id="searchItems"></div>
+      </div>
 
       <div class="typing-indicator" id="typingIndicator">
         <span class="typing-text" id="typingText"></span>
@@ -90,10 +136,11 @@
       <div class="chat-input">
         <div class="input-row">
           <label class="attach-btn">
-            <input type="file" id="fileInput" hidden>
+            <input type="file" id="fileInput" hidden accept="image/*,video/*,audio/*,.pdf,.doc,.docx,.txt">
             📎
           </label>
-          <input type="text" id="textInput" placeholder="Type a message..." disabled>
+          <button class="emoji-btn" id="emojiBtn">😀</button>
+          <input type="text" id="textInput" placeholder="Type a message... (Markdown supported)" disabled>
           <button id="sendBtn" disabled>Send</button>
         </div>
         <div class="upload-row">
@@ -106,6 +153,23 @@
 
   <ul class="cmd-suggest" id="cmdSuggest"></ul>
 
+  <!-- Marked.js for Markdown parsing -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/9.1.6/marked.min.js"></script>
+  <!-- Prism.js for syntax highlighting -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-javascript.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-python.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-rust.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-css.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-bash.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-json.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-typescript.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-go.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-java.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-c.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-cpp.min.js"></script>
+  
+  <!-- Modular JavaScript -->
   <script src="js/config.js"></script>
   <script src="js/state.js"></script>
   <script src="js/dom.js"></script>

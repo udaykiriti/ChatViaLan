@@ -1,9 +1,10 @@
-//! User authentication: registration, login, and password hashing.
+//! User authentication: registration, login, and secure bcrypt hashing.
 
 use std::collections::HashMap;
 use std::fs;
 use std::path::Path;
-use sha2::{Digest, Sha256};
+use bcrypt::{hash, verify, DEFAULT_COST};
+use tracing::{info, error};
 
 use crate::types::Users;
 
@@ -13,6 +14,7 @@ pub fn load_users() -> anyhow::Result<HashMap<String, String>> {
     if Path::new(path).exists() {
         let s = fs::read_to_string(path)?;
         let m: HashMap<String, String> = serde_json::from_str(&s)?;
+        info!("Loaded {} users from disk", m.len());
         Ok(m)
     } else {
         Ok(HashMap::new())
@@ -20,10 +22,9 @@ pub fn load_users() -> anyhow::Result<HashMap<String, String>> {
 }
 
 /// Save users map to disk (async-friendly via spawn_blocking).
-pub async fn save_users_async(map: &HashMap<String, String>) -> anyhow::Result<()> {
-    let m = map.clone();
+pub async fn save_users_async(map: HashMap<String, String>) -> anyhow::Result<()> {
     tokio::task::spawn_blocking(move || -> anyhow::Result<()> {
-        let s = serde_json::to_string_pretty(&m)?;
+        let s = serde_json::to_string_pretty(&map)?;
         fs::write("users.json", s)?;
         Ok(())
     })
@@ -31,36 +32,45 @@ pub async fn save_users_async(map: &HashMap<String, String>) -> anyhow::Result<(
     Ok(())
 }
 
-/// Hash password with username salt (SHA256). Not for production.
-pub fn hash_password(username: &str, password: &str) -> String {
-    let mut hasher = Sha256::new();
-    hasher.update(username.as_bytes());
-    hasher.update(b":");
-    hasher.update(password.as_bytes());
-    let result = hasher.finalize();
-    hex::encode(result)
-}
-
 /// Register a new user. Returns Err on duplicate or save error.
 pub async fn register_user(users: &Users, username: &str, password: &str) -> Result<(), String> {
-    let mut locked = users.lock().await;
-    if locked.contains_key(username) {
-        return Err("username already exists".into());
+    {
+        let locked = users.read().await;
+        if locked.contains_key(username) {
+            return Err("username already exists".into());
+        }
     }
-    let hash = hash_password(username, password);
-    locked.insert(username.to_string(), hash);
-    if let Err(e) = save_users_async(&*locked).await {
+    
+    // Hash password with bcrypt
+    let hashed = hash(password, DEFAULT_COST).map_err(|e| format!("hash error: {}", e))?;
+    
+    let map_to_save = {
+        let mut locked = users.write().await;
+        locked.insert(username.to_string(), hashed);
+        locked.clone()
+    };
+    
+    if let Err(e) = save_users_async(map_to_save).await {
+        error!("failed to save users: {}", e);
         return Err(format!("failed to save users: {}", e));
     }
+    
+    info!("Registered new user: {}", username);
     Ok(())
 }
 
 /// Verify login credentials.
 pub async fn verify_login(users: &Users, username: &str, password: &str) -> bool {
-    let locked = users.lock().await;
-    if let Some(stored) = locked.get(username) {
-        let h = hash_password(username, password);
-        return &h == stored;
+    let locked = users.read().await;
+    if let Some(stored_hash) = locked.get(username) {
+        match verify(password, stored_hash) {
+            Ok(valid) => valid,
+            Err(e) => {
+                error!("bcrypt verify error for {}: {}", username, e);
+                false
+            }
+        }
+    } else {
+        false
     }
-    false
 }

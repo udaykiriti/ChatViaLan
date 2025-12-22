@@ -2,6 +2,7 @@
 
 use std::collections::{HashMap, VecDeque};
 use uuid::Uuid;
+use tracing::info;
 use crate::types::{Clients, Histories, HistoryItem, Outgoing, Tx};
 use crate::helpers::{client_name_by_id, client_tx_by_id, now_ts};
 
@@ -23,7 +24,7 @@ pub async fn send_system_to_room(clients: &Clients, histories: &Histories, room:
         deleted: false,
     };
     {
-        let mut locked_h = histories.lock().await;
+        let mut locked_h = histories.write().await;
         let q = locked_h
             .entry(room.to_string())
             .or_insert_with(|| VecDeque::with_capacity(200));
@@ -33,7 +34,7 @@ pub async fn send_system_to_room(clients: &Clients, histories: &Histories, room:
         }
     }
     let s = serde_json::to_string(&msg).unwrap_or_default();
-    let locked = clients.lock().await;
+    let locked = clients.read().await;
     for c in locked.values() {
         if c.room == room {
             let _ = c.tx.send(warp::ws::Message::text(s.clone()));
@@ -44,7 +45,7 @@ pub async fn send_system_to_room(clients: &Clients, histories: &Histories, room:
 /// Send room history to a single client (filter deleted messages).
 pub async fn send_history_to_client_room(tx: &Tx, histories: &Histories, room: &str) {
     let items: Vec<HistoryItem> = {
-        let locked = histories.lock().await;
+        let locked = histories.read().await;
         locked
             .get(room)
             .map(|q| q.iter().filter(|i| !i.deleted).cloned().collect())
@@ -58,22 +59,26 @@ pub async fn send_history_to_client_room(tx: &Tx, histories: &Histories, room: &
 
 /// Send user list to all users in a room.
 pub async fn send_user_list_to_room(clients: &Clients, room: &str) {
-    let names: Vec<String> = {
-        let locked = clients.lock().await;
-        locked
+    let (names, s) = {
+        let locked = clients.read().await;
+        let names: Vec<String> = locked
             .values()
             .filter(|c| c.room == room)
             .map(|c| c.name.clone())
-            .collect()
+            .collect();
+        
+        let msg = Outgoing::List { users: names.clone() };
+        let s = serde_json::to_string(&msg).unwrap_or_default();
+        (names, s)
     };
-    let msg = Outgoing::List { users: names };
-    let s = serde_json::to_string(&msg).unwrap_or_default();
-    let locked = clients.lock().await;
+
+    let locked = clients.read().await;
     for c in locked.values() {
         if c.room == room {
             let _ = c.tx.send(warp::ws::Message::text(s.clone()));
         }
     }
+    info!("Broadcast user list for room '{}': {} users", room, names.len());
 }
 
 /// Broadcast a message to all clients in a room and store in history.
@@ -90,7 +95,7 @@ pub async fn broadcast_to_room_and_store(
     let mentions = extract_mentions(&item.text);
     
     {
-        let mut locked_h = histories.lock().await;
+        let mut locked_h = histories.write().await;
         let q = locked_h
             .entry(room.to_string())
             .or_insert_with(|| VecDeque::with_capacity(200));
@@ -108,7 +113,7 @@ pub async fn broadcast_to_room_and_store(
         edited: item.edited,
     };
     if let Ok(s) = serde_json::to_string(&outgoing) {
-        let locked = clients.lock().await;
+        let locked = clients.read().await;
         for c in locked.values() {
             if c.room == room {
                 let _ = c.tx.send(warp::ws::Message::text(s.clone()));
@@ -153,7 +158,7 @@ pub async fn add_reaction(
     user: &str,
 ) {
     let added = {
-        let mut locked_h = histories.lock().await;
+        let mut locked_h = histories.write().await;
         if let Some(q) = locked_h.get_mut(room) {
             if let Some(item) = q.iter_mut().find(|i| i.id == msg_id) {
                 let users = item.reactions.entry(emoji.to_string()).or_insert_with(Vec::new);
@@ -180,7 +185,7 @@ pub async fn add_reaction(
         added,
     };
     if let Ok(s) = serde_json::to_string(&msg) {
-        let locked = clients.lock().await;
+        let locked = clients.read().await;
         for c in locked.values() {
             if c.room == room {
                 let _ = c.tx.send(warp::ws::Message::text(s.clone()));
@@ -199,7 +204,7 @@ pub async fn edit_message(
     requester: &str,
 ) -> bool {
     let edited = {
-        let mut locked_h = histories.lock().await;
+        let mut locked_h = histories.write().await;
         if let Some(q) = locked_h.get_mut(room) {
             if let Some(item) = q.iter_mut().find(|i| i.id == msg_id && i.from == requester) {
                 item.text = new_text.to_string();
@@ -219,7 +224,7 @@ pub async fn edit_message(
             new_text: new_text.to_string(),
         };
         if let Ok(s) = serde_json::to_string(&msg) {
-            let locked = clients.lock().await;
+            let locked = clients.read().await;
             for c in locked.values() {
                 if c.room == room {
                     let _ = c.tx.send(warp::ws::Message::text(s.clone()));
@@ -240,7 +245,7 @@ pub async fn delete_message(
     requester: &str,
 ) -> bool {
     let deleted = {
-        let mut locked_h = histories.lock().await;
+        let mut locked_h = histories.write().await;
         if let Some(q) = locked_h.get_mut(room) {
             if let Some(item) = q.iter_mut().find(|i| i.id == msg_id && i.from == requester) {
                 item.deleted = true;
@@ -258,7 +263,7 @@ pub async fn delete_message(
             msg_id: msg_id.to_string(),
         };
         if let Ok(s) = serde_json::to_string(&msg) {
-            let locked = clients.lock().await;
+            let locked = clients.read().await;
             for c in locked.values() {
                 if c.room == room {
                     let _ = c.tx.send(warp::ws::Message::text(s.clone()));
@@ -277,7 +282,7 @@ pub async fn broadcast_read_receipt(clients: &Clients, room: &str, user: &str, l
         last_msg_id: last_msg_id.to_string(),
     };
     if let Ok(s) = serde_json::to_string(&msg) {
-        let locked = clients.lock().await;
+        let locked = clients.read().await;
         for c in locked.values() {
             if c.room == room {
                 let _ = c.tx.send(warp::ws::Message::text(s.clone()));
@@ -295,7 +300,7 @@ pub async fn join_room(client_id: &str, room: &str, clients: &Clients, histories
 
     // Move client to new room and capture old room
     let old_room = {
-        let mut locked = clients.lock().await;
+        let mut locked = clients.write().await;
         if let Some(c) = locked.get_mut(client_id) {
             let old = c.room.clone();
             c.room = target.to_string();
@@ -307,7 +312,7 @@ pub async fn join_room(client_id: &str, room: &str, clients: &Clients, histories
 
     // Ensure room exists in histories
     {
-        let mut locked_h = histories.lock().await;
+        let mut locked_h = histories.write().await;
         locked_h
             .entry(target.to_string())
             .or_insert_with(|| VecDeque::with_capacity(200));
@@ -334,4 +339,5 @@ pub async fn join_room(client_id: &str, room: &str, clients: &Clients, histories
             serde_json::to_string(&msg).unwrap(),
         ));
     }
+    info!("Client {} joined room '{}'", name, target);
 }

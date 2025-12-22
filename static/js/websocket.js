@@ -82,10 +82,23 @@ function handleSystem(text) {
         sendCommand('/list');
     }
 
-    if (text.includes("Your name is") || text.includes("Logged in")) {
+    if (text.includes("Your name is") || text.includes("Logged in") || text.includes("Register failed") || text.includes("Login failed")) {
         const m = text.match(/'([^']+)'/);
         if (m) myName = m[1];
         named = true;
+
+        // Reset auth buttons
+        const loginBtn = $('loginBtn');
+        const regBtn = $('regBtn');
+        if (loginBtn) {
+            loginBtn.classList.remove('loading');
+            loginBtn.textContent = 'Login';
+        }
+        if (regBtn) {
+            regBtn.classList.remove('loading');
+            regBtn.textContent = 'Register';
+        }
+
         updateInputState();
         sendCommand('/list');
         sendCommand('/rooms');

@@ -23,8 +23,9 @@ mod upload;
 
 use std::collections::{HashMap, VecDeque};
 use std::sync::Arc;
-use tokio::sync::Mutex;
+use tokio::sync::RwLock;
 use warp::Filter;
+use tracing::{info, warn};
 
 use crate::types::{Clients, Histories, Users};
 use crate::auth::load_users;
@@ -33,16 +34,20 @@ use crate::upload::handle_upload;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
+    // Initialize tracing
+    tracing_subscriber::fmt::init();
+    info!("Starting Rust Chat Server...");
+
     // Load users from disk
     let users_map = load_users().unwrap_or_default();
-    let users: Users = Arc::new(Mutex::new(users_map));
+    let users: Users = Arc::new(RwLock::new(users_map));
 
-    let clients: Clients = Arc::new(Mutex::new(HashMap::new()));
-    let histories: Histories = Arc::new(Mutex::new(HashMap::new()));
+    let clients: Clients = Arc::new(RwLock::new(HashMap::new()));
+    let histories: Histories = Arc::new(RwLock::new(HashMap::new()));
 
     // Ensure default "lobby" room exists
     {
-        let mut h = histories.lock().await;
+        let mut h: tokio::sync::RwLockWriteGuard<HashMap<String, VecDeque<crate::types::HistoryItem>>> = histories.write().await;
         h.entry("lobby".to_string())
             .or_insert_with(|| VecDeque::with_capacity(200));
     }
@@ -84,7 +89,7 @@ async fn main() -> anyhow::Result<()> {
 
     // Ensure uploads directory exists
     if let Err(e) = std::fs::create_dir_all("uploads") {
-        eprintln!("warning: failed to create uploads dir: {}", e);
+        warn!("failed to create uploads dir: {}", e);
     }
 
     // Get port from environment or default to 8080
@@ -93,7 +98,7 @@ async fn main() -> anyhow::Result<()> {
         .and_then(|p| p.parse().ok())
         .unwrap_or(8080);
 
-    println!("Server running at http://0.0.0.0:{}/", port);
+    info!("Server running at http://0.0.0.0:{}/", port);
     warp::serve(routes).run(([0, 0, 0, 0], port)).await;
 
     Ok(())

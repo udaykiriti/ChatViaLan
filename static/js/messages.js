@@ -8,21 +8,38 @@ function appendSystem(text) {
   DOM.messagesEl.scrollTop = DOM.messagesEl.scrollHeight;
 }
 
-function appendMessage(id, from, text, ts, reactions = {}, edited = false) {
+function appendMessage(id, from, text, ts, reactions = {}, edited = false, replyTo = null) {
+  // Store for search
+  allMessages.push({ id, from, text, ts });
+
   const div = document.createElement('div');
   const isMine = from === myName;
   div.className = `message ${isMine ? 'sent' : 'received'}`;
   div.dataset.msgId = id;
 
   const editedLabel = edited ? '<span class="edited-label">(edited)</span>' : '';
+  const fullDate = fullTimestamp(ts);
+
+  // Reply preview
+  let replyHtml = '';
+  if (replyTo) {
+    const replyMsg = allMessages.find(m => m.id === replyTo);
+    if (replyMsg) {
+      replyHtml = `<div class="reply-preview">
+        <span class="reply-author">${escapeHtml(replyMsg.from)}</span>
+        <span class="reply-text">${escapeHtml(replyMsg.text.slice(0, 50))}${replyMsg.text.length > 50 ? '...' : ''}</span>
+      </div>`;
+    }
+  }
 
   div.innerHTML = `
     <div class="message-header">
       <span class="message-author">${escapeHtml(from)}</span>
-      <span class="message-time" data-ts="${ts}">${relativeTime(ts)}</span>
+      <span class="message-time" data-ts="${ts}" title="${fullDate}">${relativeTime(ts)}</span>
       ${editedLabel}
       ${createMessageActions(id, from)}
     </div>
+    ${replyHtml}
     <div class="message-bubble">${linkify(highlightMentions(escapeHtml(text)))}</div>
     ${createReactionBar(id, reactions)}
   `;
@@ -43,6 +60,7 @@ function updateUsers(users) {
       <li class="user-item" data-user="${escapeHtml(u)}">
         <div class="user-avatar">${u[0].toUpperCase()}</div>
         <span>${escapeHtml(u)}</span>
+        <button class="dm-btn" data-user="${escapeHtml(u)}" title="Send DM">💬</button>
       </li>
     `).join('');
   }
@@ -51,7 +69,6 @@ function updateUsers(users) {
 function updateAvailableRooms(rooms) {
   if (!DOM.roomList) return;
 
-  // Sort: current room first, then by member count
   rooms.sort((a, b) => {
     if (a.name === currentRoom) return -1;
     if (b.name === currentRoom) return 1;
@@ -67,4 +84,24 @@ function updateAvailableRooms(rooms) {
       </div>
     </li>
   `).join('');
+}
+
+function updatePinnedMessages(messages) {
+  if (!DOM.pinnedMessages) return;
+
+  if (messages.length === 0) {
+    DOM.pinnedMessages.classList.add('hidden');
+    return;
+  }
+
+  DOM.pinnedMessages.classList.remove('hidden');
+  DOM.pinnedMessages.innerHTML = `
+    <div class="pinned-header">📌 Pinned Messages</div>
+    ${messages.map(m => `
+      <div class="pinned-item" data-msg-id="${m.id}">
+        <span class="pinned-author">${escapeHtml(m.from)}:</span>
+        <span class="pinned-text">${escapeHtml(m.text.slice(0, 60))}${m.text.length > 60 ? '...' : ''}</span>
+      </div>
+    `).join('')}
+  `;
 }

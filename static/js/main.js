@@ -5,6 +5,7 @@ function init() {
     initTheme();
     initSound();
     initMobileMenu();
+    buildEmojiPicker();
     initEventListeners();
     updateInputState();
     connect();
