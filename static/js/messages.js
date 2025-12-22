@@ -37,21 +37,33 @@ function appendMessage(id, from, text, ts, reactions = {}, edited = false) {
 }
 
 function updateUsers(users) {
-  DOM.userCount.textContent = `(${users.length})`;
-  DOM.userList.innerHTML = users.map(u => `
-    <li class="user-item" data-user="${escapeHtml(u)}">
-      <div class="user-avatar">${u[0].toUpperCase()}</div>
-      <span>${escapeHtml(u)}</span>
-    </li>
-  `).join('');
+  if (DOM.userCount) DOM.userCount.textContent = `(${users.length})`;
+  if (DOM.userList) {
+    DOM.userList.innerHTML = users.map(u => `
+      <li class="user-item" data-user="${escapeHtml(u)}">
+        <div class="user-avatar">${u[0].toUpperCase()}</div>
+        <span>${escapeHtml(u)}</span>
+      </li>
+    `).join('');
+  }
 }
 
-function updateRooms(rooms) {
+function updateAvailableRooms(rooms) {
+  if (!DOM.roomList) return;
+
+  // Sort: current room first, then by member count
+  rooms.sort((a, b) => {
+    if (a.name === currentRoom) return -1;
+    if (b.name === currentRoom) return 1;
+    return b.members - a.members;
+  });
+
   DOM.roomList.innerHTML = rooms.map(r => `
-    <li class="room-item ${r === currentRoom ? 'active' : ''}" data-room="${escapeHtml(r)}">
+    <li class="room-item ${r.name === currentRoom ? 'active' : ''}" data-room="${escapeHtml(r.name)}">
       <div class="room-icon">#</div>
       <div class="room-info">
-        <div class="room-name">${escapeHtml(r)}</div>
+        <div class="room-name">${escapeHtml(r.name)}</div>
+        <div class="room-members">${r.members} ${r.members === 1 ? 'member' : 'members'}</div>
       </div>
     </li>
   `).join('');

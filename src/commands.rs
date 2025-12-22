@@ -26,11 +26,24 @@ pub async fn handle_cmd_with_rooms(
             }
         }
         "/rooms" => {
-            let rooms: Vec<String> = {
+            let room_list: Vec<crate::types::RoomInfo> = {
                 let locked_h = histories.lock().await;
-                locked_h.keys().cloned().collect()
+                let locked_c = clients.lock().await;
+                locked_h.keys().map(|room_name| {
+                    let member_count = locked_c.values().filter(|c| &c.room == room_name).count();
+                    crate::types::RoomInfo {
+                        name: room_name.clone(),
+                        members: member_count,
+                    }
+                }).collect()
             };
-            send_to_client(clients, client_id, &format!("Rooms: {}", rooms.join(", "))).await;
+            // Send structured room list
+            let msg = Outgoing::RoomList { rooms: room_list };
+            if let Some(tx) = client_tx_by_id(clients, client_id).await {
+                if let Ok(s) = serde_json::to_string(&msg) {
+                    let _ = tx.send(warp::ws::Message::text(s));
+                }
+            }
         }
         "/leave" => {
             join_room(client_id, "lobby", clients, histories).await;

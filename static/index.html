@@ -3,9 +3,8 @@
 
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>LAN Chat</title>
-  <!-- Modular CSS -->
   <link rel="stylesheet" href="css/base.css">
   <link rel="stylesheet" href="css/sidebar.css">
   <link rel="stylesheet" href="css/chat.css">
@@ -14,15 +13,21 @@
 </head>
 
 <body>
+  <!-- Sidebar Overlay (mobile) -->
+  <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
   <div class="app">
-    <!-- Left Sidebar: Rooms & Users -->
-    <aside class="sidebar">
+    <!-- Left Sidebar -->
+    <aside class="sidebar" id="sidebar">
       <div class="sidebar-header">
         <h2>Chats</h2>
-        <button class="theme-toggle" id="themeToggle">🌙</button>
+        <div style="display:flex;gap:8px;">
+          <button class="theme-toggle" id="themeToggle">🌙</button>
+          <button class="close-sidebar" id="closeSidebar">✕</button>
+        </div>
       </div>
 
-      <!-- Rooms Section -->
+      <!-- Rooms -->
       <div class="sidebar-section">
         <div class="section-title">Rooms</div>
         <ul class="room-list" id="roomList"></ul>
@@ -32,13 +37,13 @@
         </div>
       </div>
 
-      <!-- Users Section -->
+      <!-- Online Users -->
       <div class="sidebar-section">
         <div class="section-title">Online <span id="userCount">(0)</span></div>
         <ul class="user-list" id="userList"></ul>
       </div>
 
-      <!-- Auth Section -->
+      <!-- Auth -->
       <div class="sidebar-section auth-section">
         <div class="auth-tabs">
           <button class="auth-tab active" data-tab="login">Login</button>
@@ -58,33 +63,30 @@
       </div>
     </aside>
 
-    <!-- Main Chat Area -->
+    <!-- Main Chat -->
     <main class="chat-main">
-      <!-- Chat Header -->
       <header class="chat-header">
         <div class="header-left">
+          <button class="menu-btn" id="menuBtn">☰</button>
           <span class="status-dot" id="statusDot"></span>
           <span id="connectionStatus">connecting...</span>
         </div>
         <div class="header-center">
-          <span class="room-name" id="currentRoom">#lobby</span>
+          <span id="currentRoom">#lobby</span>
         </div>
         <div class="header-right">
-          <input type="text" id="nameInput" placeholder="Your name...">
+          <input type="text" id="nameInput" placeholder="Name...">
           <button id="setNameBtn">Set</button>
         </div>
       </header>
 
-      <!-- Messages Area -->
       <div class="messages" id="messages"></div>
 
-      <!-- Typing Indicator -->
       <div class="typing-indicator" id="typingIndicator">
         <span class="typing-text" id="typingText"></span>
         <span class="typing-dots"><span></span><span></span><span></span></span>
       </div>
 
-      <!-- Input Area -->
       <div class="chat-input">
         <div class="input-row">
           <label class="attach-btn">
@@ -102,10 +104,8 @@
     </main>
   </div>
 
-  <!-- Command Suggestions -->
   <ul class="cmd-suggest" id="cmdSuggest"></ul>
 
-  <!-- Modular JavaScript -->
   <script src="js/config.js"></script>
   <script src="js/state.js"></script>
   <script src="js/dom.js"></script>

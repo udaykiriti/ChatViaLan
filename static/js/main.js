@@ -1,10 +1,10 @@
 // ===== Main Entry Point =====
-// This file loads all modules and initializes the app
 
 function init() {
     initDOM();
     initTheme();
     initSound();
+    initMobileMenu();
     initEventListeners();
     updateInputState();
     connect();

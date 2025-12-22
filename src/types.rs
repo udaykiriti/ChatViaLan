@@ -59,6 +59,14 @@ pub enum Outgoing {
     Delete { msg_id: String },
     ReadReceipt { user: String, last_msg_id: String },
     Mention { from: String, text: String, mentioned: String },
+    RoomList { rooms: Vec<RoomInfo> },
+}
+
+/// Room info for available rooms list.
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct RoomInfo {
+    pub name: String,
+    pub members: usize,
 }
 
 /// Messages received from client.

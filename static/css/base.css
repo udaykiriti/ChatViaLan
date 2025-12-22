@@ -1,6 +1,5 @@
 /* ===== CSS Variables ===== */
 :root {
-    /* Dark theme - Messenger inspired */
     --bg: #0a0a0a;
     --bg-secondary: #1a1a1a;
     --surface: #242526;
@@ -17,6 +16,7 @@
     --danger: #f02849;
     --radius: 20px;
     --radius-sm: 12px;
+    --sidebar-width: 280px;
 }
 
 [data-theme="light"] {
@@ -40,10 +40,142 @@
     padding: 0;
 }
 
+html,
+body {
+    height: 100%;
+    width: 100%;
+    overflow: hidden;
+}
+
 body {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     background: var(--bg);
     color: var(--text);
+    font-size: 14px;
+    line-height: 1.4;
+}
+
+/* ===== App Layout ===== */
+.app {
+    display: flex;
+    width: 100%;
     height: 100vh;
+    height: 100dvh;
     overflow: hidden;
+}
+
+/* ===== Sidebar Base ===== */
+.sidebar {
+    width: var(--sidebar-width);
+    flex-shrink: 0;
+    background: var(--bg-secondary);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+    height: 100%;
+}
+
+/* ===== Chat Main ===== */
+.chat-main {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    background: var(--bg);
+    height: 100%;
+    overflow: hidden;
+}
+
+/* ===== Desktop Layout ===== */
+@media (min-width: 769px) {
+    .menu-btn {
+        display: none !important;
+    }
+
+    .sidebar-overlay {
+        display: none !important;
+    }
+
+    .close-sidebar {
+        display: none !important;
+    }
+}
+
+/* ===== Mobile Layout ===== */
+@media (max-width: 768px) {
+    .sidebar {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 85%;
+        max-width: 320px;
+        height: 100%;
+        z-index: 1000;
+        transform: translateX(-100%);
+        transition: transform 0.3s ease;
+    }
+
+    .sidebar.open {
+        transform: translateX(0);
+    }
+
+    .sidebar-overlay {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.6);
+        z-index: 999;
+    }
+
+    .sidebar-overlay.open {
+        display: block;
+    }
+
+    .menu-btn {
+        display: flex !important;
+    }
+
+    .close-sidebar {
+        display: flex !important;
+    }
+
+    .header-right input {
+        width: 70px;
+    }
+
+    #connectionStatus {
+        display: none;
+    }
+
+    .message {
+        max-width: 85%;
+    }
+}
+
+/* ===== Very Small Screens ===== */
+@media (max-width: 400px) {
+    .header-right input {
+        width: 60px;
+        padding: 5px 8px;
+        font-size: 0.75rem;
+    }
+
+    .header-right button {
+        padding: 5px 10px;
+        font-size: 0.75rem;
+    }
+
+    .input-row input {
+        padding: 8px 12px;
+        font-size: 0.85rem;
+    }
+
+    .input-row button {
+        padding: 8px 12px;
+        font-size: 0.8rem;
+    }
 }

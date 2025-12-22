@@ -38,10 +38,14 @@ function handleReactionUpdate(msgId, emoji, user, added) {
 
     let reactionBar = msgEl.querySelector('.reaction-bar');
     if (!reactionBar) {
-        const content = msgEl.querySelector('.message-content');
-        content.insertAdjacentHTML('afterend', createReactionBar(msgId, {}));
-        reactionBar = msgEl.querySelector('.reaction-bar');
+        const bubble = msgEl.querySelector('.message-bubble');
+        if (bubble) {
+            bubble.insertAdjacentHTML('afterend', createReactionBar(msgId, {}));
+            reactionBar = msgEl.querySelector('.reaction-bar');
+        }
     }
+
+    if (!reactionBar) return;
 
     let btn = reactionBar.querySelector(`[data-emoji="${emoji}"]`);
     if (added) {
@@ -51,8 +55,10 @@ function handleReactionUpdate(msgId, emoji, user, added) {
             if (user === myName) btn.classList.add('active');
         } else {
             const addBtn = reactionBar.querySelector('.add-reaction-btn');
-            addBtn.insertAdjacentHTML('beforebegin',
-                `<button class="reaction-btn ${user === myName ? 'active' : ''}" data-msg-id="${msgId}" data-emoji="${emoji}">${emoji} 1</button>`);
+            if (addBtn) {
+                addBtn.insertAdjacentHTML('beforebegin',
+                    `<button class="reaction-btn ${user === myName ? 'active' : ''}" data-msg-id="${msgId}" data-emoji="${emoji}">${emoji} 1</button>`);
+            }
         }
     } else {
         if (btn) {
@@ -69,13 +75,17 @@ function handleReactionUpdate(msgId, emoji, user, added) {
 function handleEditUpdate(msgId, newText) {
     const msgEl = document.querySelector(`[data-msg-id="${msgId}"]`);
     if (!msgEl) return;
-    const content = msgEl.querySelector('.message-content');
-    content.innerHTML = linkify(highlightMentions(escapeHtml(newText)));
+    const bubble = msgEl.querySelector('.message-bubble');
+    if (bubble) {
+        bubble.innerHTML = linkify(highlightMentions(escapeHtml(newText)));
+    }
 
     let editedLabel = msgEl.querySelector('.edited-label');
     if (!editedLabel) {
         const header = msgEl.querySelector('.message-header');
-        header.insertAdjacentHTML('beforeend', '<span class="edited-label">(edited)</span>');
+        if (header) {
+            header.insertAdjacentHTML('beforeend', '<span class="edited-label">(edited)</span>');
+        }
     }
 }
 
@@ -83,6 +93,6 @@ function handleDeleteUpdate(msgId) {
     const msgEl = document.querySelector(`[data-msg-id="${msgId}"]`);
     if (msgEl) {
         msgEl.classList.add('deleted');
-        msgEl.innerHTML = '<div class="deleted-text">This message was deleted</div>';
+        msgEl.innerHTML = '<div class="message-bubble"><span class="deleted-text">This message was deleted</span></div>';
     }
 }

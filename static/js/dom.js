@@ -23,6 +23,10 @@ const DOM = {
     themeToggle: null,
     typingIndicator: null,
     typingText: null,
+    menuBtn: null,
+    sidebar: null,
+    sidebarOverlay: null,
+    closeSidebar: null,
 };
 
 function initDOM() {
@@ -47,4 +51,33 @@ function initDOM() {
     DOM.themeToggle = $('themeToggle');
     DOM.typingIndicator = $('typingIndicator');
     DOM.typingText = $('typingText');
+    DOM.menuBtn = $('menuBtn');
+    DOM.sidebar = $('sidebar');
+    DOM.sidebarOverlay = $('sidebarOverlay');
+    DOM.closeSidebar = $('closeSidebar');
+}
+
+// ===== Mobile Sidebar Toggle =====
+function openSidebar() {
+    if (DOM.sidebar) DOM.sidebar.classList.add('open');
+    if (DOM.sidebarOverlay) DOM.sidebarOverlay.classList.add('open');
+    document.body.style.overflow = 'hidden';
+}
+
+function closeSidebar() {
+    if (DOM.sidebar) DOM.sidebar.classList.remove('open');
+    if (DOM.sidebarOverlay) DOM.sidebarOverlay.classList.remove('open');
+    document.body.style.overflow = '';
+}
+
+function initMobileMenu() {
+    if (DOM.menuBtn) {
+        DOM.menuBtn.onclick = openSidebar;
+    }
+    if (DOM.sidebarOverlay) {
+        DOM.sidebarOverlay.onclick = closeSidebar;
+    }
+    if (DOM.closeSidebar) {
+        DOM.closeSidebar.onclick = closeSidebar;
+    }
 }

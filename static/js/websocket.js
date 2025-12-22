@@ -12,6 +12,11 @@ function connect() {
         updateInputState();
         appendSystem('Connected to server. Set your name to start chatting.');
         sendCommand('/rooms');
+
+        // Auto-refresh rooms every 10 seconds
+        setInterval(() => {
+            if (connected) sendCommand('/rooms');
+        }, 10000);
     };
 
     ws.onmessage = (e) => {
@@ -27,6 +32,7 @@ function connect() {
                     }
                     break;
                 case 'list': updateUsers(data.users || []); break;
+                case 'roomlist': updateAvailableRooms(data.rooms || []); break;
                 case 'history':
                     (data.items || []).forEach(m => appendMessage(m.id, m.from, m.text, m.ts, m.reactions || {}, m.edited));
                     break;
@@ -66,17 +72,11 @@ function connect() {
 function handleSystem(text) {
     appendSystem(text);
 
-    if (text.startsWith('Rooms:')) {
-        const rooms = text.slice(6).trim().split(',').map(r => r.trim()).filter(Boolean);
-        updateRooms(rooms);
-    }
-
     if (text.includes("You joined room") || text.includes("joined the room")) {
         const m = text.match(/room '([^']+)'/);
         if (m) {
             currentRoom = m[1];
             DOM.roomBadge.textContent = '#' + currentRoom;
-            // Refresh room list to update active state
             sendCommand('/rooms');
         }
         sendCommand('/list');

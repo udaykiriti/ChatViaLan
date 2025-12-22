@@ -123,10 +123,6 @@ function initEventListeners() {
         };
     });
 
-    document.querySelectorAll('.switch-tab').forEach(btn => {
-        btn.onclick = () => document.querySelector(`.auth-tab[data-target="${btn.dataset.target}"]`).click();
-    });
-
     // Login/Register
     $('loginBtn').onclick = () => {
         const u = $('loginUser').value.trim(), p = $('loginPass').value;
@@ -203,10 +199,12 @@ function initEventListeners() {
         const editBtn = e.target.closest('.edit-btn');
         if (editBtn) {
             const msgEl = document.querySelector(`[data-msg-id="${editBtn.dataset.msgId}"]`);
-            const content = msgEl.querySelector('.message-content');
-            const newText = prompt('Edit message:', content.textContent);
-            if (newText && newText !== content.textContent) {
-                sendEdit(editBtn.dataset.msgId, newText);
+            const bubble = msgEl.querySelector('.message-bubble');
+            if (bubble) {
+                const newText = prompt('Edit message:', bubble.textContent);
+                if (newText && newText !== bubble.textContent) {
+                    sendEdit(editBtn.dataset.msgId, newText);
+                }
             }
             return;
         }

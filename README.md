@@ -1,7 +1,7 @@
 # Rust Chat — Real-Time WebSocket Chat Server
 
-A fully local, offline-friendly, multi-user chat system built using **Rust**, **Warp**, and **WebSockets**.  
-Works 100% offline on LAN/localhost with a modern, clean UI.
+A fully local, offline-friendly, multi-user chat system built with **Rust**, **Warp**, and **WebSockets**.  
+Messenger-style UI with real-time features.
 
 ---
 
@@ -9,25 +9,27 @@ Works 100% offline on LAN/localhost with a modern, clean UI.
 
 ### Core
 - Real-time WebSocket messaging
-- Multiple rooms (`/join`, `/rooms`, `/leave`)
-- User accounts (`/register`, `/login`) with guest mode
-- Private messaging (`/msg user text`)
+- Multiple rooms with member counts
+- User accounts (register/login) + guest mode
+- Private messaging
 - File upload & sharing
-- Persistent message history per room
-- Works 100% offline (LAN/local)
+- Persistent message history
 
-### Advanced Features
-- **Message Reactions** — React with emojis (thumbs up, heart, laugh, etc.)
-- **Edit Messages** — Edit your own sent messages
-- **Delete Messages** — Delete with confirmation
-- **Mentions** — @username highlighting with notifications
-- **Read Receipts** — Track who read messages
-- **Sound Notifications** — Beep on new messages when tab unfocused
-- **Unread Count** — Tab title shows unread count
-- **Dark/Light Mode** — Toggle theme with preference saved
-- **Typing Indicators** — Shows "X is typing..."
-- **Rate Limiting** — Max 5 messages per 10 seconds
-- **Relative Timestamps** — "2m ago" format
+### Advanced
+- Message reactions (👍 ❤️ 😂 😮 😢 🎉)
+- Edit & delete messages
+- @mentions with notifications
+- Typing indicators
+- Sound notifications + unread count
+- Dark/light theme
+- Rate limiting (5 msg / 10 sec)
+
+### UI
+- Messenger-style layout
+- Message bubbles (sent right, received left)
+- Available rooms with member counts
+- Auto-refresh rooms every 10 seconds
+- Fully responsive (mobile + desktop)
 
 ---
 
@@ -36,120 +38,83 @@ Works 100% offline on LAN/localhost with a modern, clean UI.
 ```
 rust-chat/
 ├── Cargo.toml
-├── users.json            # Stored user accounts
-├── uploads/              # Uploaded files
+├── users.json              # User accounts
+├── uploads/                # Uploaded files
 ├── static/
-│   ├── index.html        # Main HTML
-│   ├── styles.css        # Clean modern UI
-│   ├── app.js            # Frontend logic
-│   └── favicon.svg       # App icon
+│   ├── index.html
+│   ├── favicon.svg
+│   ├── css/
+│   │   ├── base.css        # Variables, layout
+│   │   ├── sidebar.css     # Sidebar, rooms
+│   │   ├── chat.css        # Header, input
+│   │   └── messages.css    # Message bubbles
+│   └── js/
+│       ├── config.js       # Config constants
+│       ├── state.js        # App state
+│       ├── dom.js          # DOM references
+│       ├── utils.js        # Utilities
+│       ├── features.js     # Theme, sound, typing
+│       ├── reactions.js    # Reactions, edit, delete
+│       ├── messages.js     # Message rendering
+│       ├── websocket.js    # WebSocket connection
+│       ├── events.js       # Event listeners
+│       └── main.js         # Entry point
 └── src/
-    ├── main.rs           # Server setup & routes
-    ├── types.rs          # Core data structures
-    ├── client.rs         # WebSocket client handling
-    ├── commands.rs       # Command processing
-    ├── room.rs           # Room management
-    ├── auth.rs           # User authentication
-    └── upload.rs         # File upload handling
+    ├── main.rs             # Server setup
+    ├── types.rs            # Data structures
+    ├── client.rs           # WebSocket handling
+    ├── commands.rs         # Command processing
+    ├── room.rs             # Room management
+    ├── helpers.rs          # Helper functions
+    ├── rate_limit.rs       # Rate limiting
+    ├── typing.rs           # Typing indicators
+    ├── auth.rs             # Authentication
+    └── upload.rs           # File uploads
 ```
 
 ---
 
 ## Quick Start
 
-### 1. Install Rust
 ```bash
+# Install Rust
 curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
-```
 
-### 2. Run the Server
-```bash
+# Run server
 cargo run --release
-```
 
-### 3. Open the Chat
-- **Local**: http://localhost:8080
-- **LAN**: `http://<your-ip>:8080`
-
-Find your IP:
-```bash
-ip a          # Linux
-ipconfig      # Windows
+# Open browser
+# Local: http://localhost:8080
+# LAN:   http://<your-ip>:8080
 ```
 
 ---
 
-## Chat Commands
+## Commands
 
 | Command | Description |
 |---------|-------------|
-| `/name <name>` | Change display name |
+| `/name <name>` | Set display name |
 | `/register <user> <pass>` | Create account |
 | `/login <user> <pass>` | Log in |
 | `/msg <user> <text>` | Private message |
-| `/join <room>` | Join/create a room |
-| `/rooms` | List all rooms |
+| `/join <room>` | Join room |
+| `/rooms` | List rooms |
 | `/leave` | Return to lobby |
-| `/who` | List users in room |
-| `/help` | Show all commands |
-
----
-
-## UI Features
-
-| Action | How |
-|--------|-----|
-| React | Click `+` on message, pick emoji |
-| Edit | Hover your message, click edit icon |
-| Delete | Hover your message, click delete icon |
-| Mention | Type `@username` in message |
-| Theme | Click theme toggle in header |
-| Upload | Click Attach, then Upload |
-
----
-
-## File Sharing
-
-Upload files via the UI. Files stored in `uploads/`:
-```
-http://localhost:8080/uploads/<id>_filename.ext
-```
-
----
-
-## Security
-
-- Passwords hashed with SHA-256 + salt
-- Rate limiting prevents spam
-- Safe for LAN/local use
-- **Not production-ready** — use Argon2 for production
-
----
-
-## LAN Setup
-
-Allow firewall (Linux):
-```bash
-sudo firewall-cmd --add-port=8080/tcp --permanent
-sudo firewall-cmd --reload
-```
-
-Custom port:
-```bash
-PORT=3000 cargo run --release
-```
+| `/who` | List users |
+| `/help` | Show commands |
 
 ---
 
 ## Tech Stack
 
 - **Backend**: Rust, Warp, Tokio
-- **Frontend**: Vanilla JS, CSS (no frameworks)
+- **Frontend**: Vanilla JS, CSS
 - **Protocol**: WebSocket
-- **Storage**: JSON files (users), in-memory (messages)
+- **Storage**: JSON (users), in-memory (messages)
 
 ---
 
 ## License
 
-MIT — Free to use, modify, and redistribute.
+MIT

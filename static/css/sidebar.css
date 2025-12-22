@@ -1,10 +1,3 @@
-/* ===== App Layout ===== */
-.app {
-    display: grid;
-    grid-template-columns: 280px 1fr;
-    height: 100vh;
-}
-
 /* ===== Sidebar ===== */
 .sidebar {
     background: var(--bg-secondary);
@@ -12,55 +5,93 @@
     display: flex;
     flex-direction: column;
     overflow-y: auto;
+    height: 100%;
 }
 
 .sidebar-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 16px;
+    padding: 12px 16px;
     border-bottom: 1px solid var(--border);
+    position: sticky;
+    top: 0;
+    background: var(--bg-secondary);
+    z-index: 10;
 }
 
 .sidebar-header h2 {
-    font-size: 1.5rem;
+    font-size: 1.25rem;
     font-weight: 700;
 }
 
-.theme-toggle {
-    width: 36px;
-    height: 36px;
+.close-sidebar {
+    display: none;
+    width: 32px;
+    height: 32px;
     border: none;
     background: var(--surface);
     border-radius: 50%;
     font-size: 18px;
     cursor: pointer;
+    align-items: center;
+    justify-content: center;
+}
+
+@media (max-width: 768px) {
+    .close-sidebar {
+        display: flex;
+    }
+}
+
+.theme-toggle {
+    width: 32px;
+    height: 32px;
+    border: none;
+    background: var(--surface);
+    border-radius: 50%;
+    font-size: 16px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .sidebar-section {
-    padding: 12px;
+    padding: 10px 12px;
     border-bottom: 1px solid var(--border);
 }
 
 .section-title {
-    font-size: 0.75rem;
+    font-size: 0.7rem;
     font-weight: 600;
     color: var(--text-muted);
     text-transform: uppercase;
-    margin-bottom: 8px;
+    letter-spacing: 0.5px;
+    margin-bottom: 6px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.section-title .refresh-icon {
+    font-size: 0.6rem;
+    opacity: 0.5;
 }
 
 /* ===== Room List ===== */
 .room-list {
     list-style: none;
+    max-height: 200px;
+    overflow-y: auto;
 }
 
 .room-item {
     display: flex;
     align-items: center;
-    gap: 12px;
-    padding: 10px 12px;
-    border-radius: var(--radius-sm);
+    gap: 10px;
+    padding: 8px 10px;
+    border-radius: 8px;
     cursor: pointer;
     transition: background 0.15s;
 }
@@ -75,15 +106,16 @@
 }
 
 .room-icon {
-    width: 40px;
-    height: 40px;
+    width: 36px;
+    height: 36px;
     background: var(--surface-elevated);
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
     font-weight: 600;
-    font-size: 1.1rem;
+    font-size: 1rem;
+    flex-shrink: 0;
 }
 
 .room-item.active .room-icon {
@@ -93,27 +125,47 @@
 .room-info {
     flex: 1;
     min-width: 0;
+    overflow: hidden;
 }
 
 .room-name {
     font-weight: 600;
-    font-size: 0.95rem;
+    font-size: 0.9rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
+.room-members {
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    margin-top: 2px;
+}
+
+.room-item.active .room-members {
+    color: rgba(255, 255, 255, 0.7);
+}
+
+/* ===== New Room Input ===== */
 .new-room {
     display: flex;
-    gap: 8px;
-    margin-top: 8px;
+    gap: 6px;
+    margin-top: 10px;
 }
 
 .new-room input {
     flex: 1;
+    min-width: 0;
     padding: 8px 12px;
     border: none;
     background: var(--surface);
-    border-radius: 20px;
+    border-radius: 16px;
     color: var(--text);
     font-size: 0.85rem;
+}
+
+.new-room input::placeholder {
+    color: var(--text-muted);
 }
 
 .new-room button {
@@ -123,22 +175,29 @@
     background: var(--primary);
     color: white;
     border-radius: 50%;
-    font-size: 1.2rem;
+    font-size: 1.1rem;
     cursor: pointer;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 /* ===== User List ===== */
 .user-list {
     list-style: none;
+    max-height: 150px;
+    overflow-y: auto;
 }
 
 .user-item {
     display: flex;
     align-items: center;
-    gap: 10px;
-    padding: 8px 12px;
-    border-radius: var(--radius-sm);
+    gap: 8px;
+    padding: 8px 10px;
+    border-radius: 8px;
     cursor: pointer;
+    font-size: 0.85rem;
 }
 
 .user-item:hover {
@@ -146,28 +205,29 @@
 }
 
 .user-avatar {
-    width: 32px;
-    height: 32px;
+    width: 28px;
+    height: 28px;
     background: linear-gradient(135deg, var(--primary), #00a8ff);
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
     font-weight: 600;
-    font-size: 0.85rem;
+    font-size: 0.75rem;
     color: white;
+    flex-shrink: 0;
 }
 
 /* ===== Auth Section ===== */
 .auth-section {
     margin-top: auto;
-    padding: 16px;
+    padding: 12px;
 }
 
 .auth-tabs {
     display: flex;
     gap: 4px;
-    margin-bottom: 12px;
+    margin-bottom: 10px;
 }
 
 .auth-tab {
@@ -176,7 +236,7 @@
     border: none;
     background: var(--surface);
     color: var(--text-secondary);
-    border-radius: 8px;
+    border-radius: 6px;
     cursor: pointer;
     font-size: 0.85rem;
     font-weight: 500;
@@ -201,9 +261,13 @@
     padding: 10px 12px;
     border: none;
     background: var(--surface);
-    border-radius: 8px;
+    border-radius: 6px;
     color: var(--text);
     font-size: 0.9rem;
+}
+
+.auth-content input::placeholder {
+    color: var(--text-muted);
 }
 
 .auth-content button {
@@ -211,25 +275,16 @@
     border: none;
     background: var(--primary);
     color: white;
-    border-radius: 8px;
+    border-radius: 6px;
     cursor: pointer;
     font-weight: 500;
+    font-size: 0.9rem;
 }
 
 .auth-msg {
     display: none;
     padding: 8px;
-    border-radius: 8px;
+    border-radius: 6px;
     font-size: 0.85rem;
     margin-top: 8px;
-}
-
-@media (max-width: 768px) {
-    .app {
-        grid-template-columns: 1fr;
-    }
-
-    .sidebar {
-        display: none;
-    }
 }
