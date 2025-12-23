@@ -7,8 +7,8 @@ use crate::types::{Clients, Outgoing};
 /// Check rate limit: max 5 messages in 10 seconds.
 /// Returns true if message is allowed, false if rate limited.
 pub async fn check_rate_limit(clients: &Clients, client_id: &str) -> bool {
-    let mut locked = clients.write().await;
-    if let Some(client) = locked.get_mut(client_id) {
+    if let Some(mut r) = clients.get_mut(client_id) {
+        let client = r.value_mut();
         let now = Instant::now();
         let window = Duration::from_secs(10);
         

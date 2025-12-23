@@ -1,0 +1,16 @@
+{
+  "name": "LAN Chat",
+  "short_name": "Chat",
+  "description": "Real-time LAN Chat Server",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#1a1a1a",
+  "theme_color": "#0084ff",
+  "icons": [
+    {
+      "src": "favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ]
+}

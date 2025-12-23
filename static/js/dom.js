@@ -33,9 +33,16 @@ const DOM = {
     searchResults: null,
     searchItems: null,
     closeSearch: null,
-    emojiPicker: null,
     emojiBtn: null,
     pinnedMessages: null,
+    profileModal: null,
+    profileModalOverlay: null,
+    modalAvatar: null,
+    modalUserName: null,
+    modalUserStatus: null,
+    modalMessageBtn: null,
+    modalMentionBtn: null,
+    modalCloseBtn: null,
 };
 
 function initDOM() {
@@ -70,9 +77,16 @@ function initDOM() {
     DOM.searchResults = $('searchResults');
     DOM.searchItems = $('searchItems');
     DOM.closeSearch = $('closeSearch');
-    DOM.emojiPicker = $('emojiPicker');
     DOM.emojiBtn = $('emojiBtn');
     DOM.pinnedMessages = $('pinnedMessages');
+    DOM.profileModal = $('profileModal');
+    DOM.profileModalOverlay = $('profileModalOverlay');
+    DOM.modalAvatar = $('modalAvatar');
+    DOM.modalUserName = $('modalUserName');
+    DOM.modalUserStatus = $('modalUserStatus');
+    DOM.modalMessageBtn = $('modalMessageBtn');
+    DOM.modalMentionBtn = $('modalMentionBtn');
+    DOM.modalCloseBtn = $('modalCloseBtn');
 }
 
 // ===== Mobile Sidebar Toggle =====

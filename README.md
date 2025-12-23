@@ -13,22 +13,26 @@ Messenger-style UI with real-time features.
 - User accounts (register/login) + guest mode
 - Private messaging
 - File upload & sharing
-- Persistent message history
+- **Persistent message history (disk-based)**
 
 ### Advanced
+- **Online Status & Idle Tracking** (Active/Idle indicators)
+- **Admin Moderation** (`/kick` command)
+- **Pinned Messages** with "click to jump" functionality
+- **PWA Support** (Installable on mobile/desktop)
 - Message reactions (👍 ❤️ 😂 😮 😢 🎉)
 - Edit & delete messages
-- @mentions with notifications
+- @mentions with profile modals
 - Typing indicators
 - Sound notifications + unread count
-- Dark/light theme
+- Dark/light theme (persistent preference)
 - Rate limiting (5 msg / 10 sec)
 
-### UI
-- Messenger-style layout
-- Message bubbles (sent right, received left)
-- Available rooms with member counts
-- Auto-refresh rooms every 10 seconds
+### UI/UX
+- Messenger-style bubble layout
+- **Smooth staggered animations** for new messages
+- **Interactive Profile Modals** in the user list
+- Available rooms with auto-refresh
 - Fully responsive (mobile + desktop)
 
 ---
@@ -39,37 +43,16 @@ Messenger-style UI with real-time features.
 rust-chat/
 ├── Cargo.toml
 ├── users.json              # User accounts
+├── history.json            # Persistent chat history
 ├── uploads/                # Uploaded files
 ├── static/
 │   ├── index.html
+│   ├── manifest.json       # PWA Manifest
+│   ├── sw.js               # Service Worker
 │   ├── favicon.svg
-│   ├── css/
-│   │   ├── base.css        # Variables, layout
-│   │   ├── sidebar.css     # Sidebar, rooms
-│   │   ├── chat.css        # Header, input
-│   │   └── messages.css    # Message bubbles
-│   └── js/
-│       ├── config.js       # Config constants
-│       ├── state.js        # App state
-│       ├── dom.js          # DOM references
-│       ├── utils.js        # Utilities
-│       ├── features.js     # Theme, sound, typing
-│       ├── reactions.js    # Reactions, edit, delete
-│       ├── messages.js     # Message rendering
-│       ├── websocket.js    # WebSocket connection
-│       ├── events.js       # Event listeners
-│       └── main.js         # Entry point
-└── src/
-    ├── main.rs             # Server setup
-    ├── types.rs            # Data structures
-    ├── client.rs           # WebSocket handling
-    ├── commands.rs         # Command processing
-    ├── room.rs             # Room management
-    ├── helpers.rs          # Helper functions
-    ├── rate_limit.rs       # Rate limiting
-    ├── typing.rs           # Typing indicators
-    ├── auth.rs             # Authentication
-    └── upload.rs           # File uploads
+│   ├── css/ ...            # Stylesheets
+│   └── js/ ...             # Frontend logic
+└── src/ ...                # Backend Rust source
 ```
 
 ---
@@ -77,15 +60,11 @@ rust-chat/
 ## Quick Start
 
 ```bash
-# Install Rust
-curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
-
 # Run server
 cargo run --release
 
 # Open browser
 # Local: http://localhost:8080
-# LAN:   http://<your-ip>:8080
 ```
 
 ---
@@ -95,23 +74,24 @@ cargo run --release
 | Command | Description |
 |---------|-------------|
 | `/name <name>` | Set display name |
-| `/register <user> <pass>` | Create account |
-| `/login <user> <pass>` | Log in |
+| `/register <u> <p>` | Create account |
+| `/login <u> <p>` | Log in |
 | `/msg <user> <text>` | Private message |
 | `/join <room>` | Join room |
+| `/kick <user>` | Kick a user (Admin only) |
 | `/rooms` | List rooms |
 | `/leave` | Return to lobby |
-| `/who` | List users |
+| `/who` | List users with status |
 | `/help` | Show commands |
 
 ---
 
 ## Tech Stack
 
-- **Backend**: Rust, Warp, Tokio
-- **Frontend**: Vanilla JS, CSS
-- **Protocol**: WebSocket
-- **Storage**: JSON (users), in-memory (messages)
+- **Backend**: Rust (Warp, Tokio, DashMap)
+- **Frontend**: Vanilla JS, CSS (Modular structure)
+- **Persistence**: JSON-based (Users, History)
+- **PWA**: Manifest, Service Worker
 
 ---
 

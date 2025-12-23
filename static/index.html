@@ -5,16 +5,26 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>LAN Chat</title>
-  
+
+  <script>
+    // Anti-flash theme script
+    (function () {
+      const theme = localStorage.getItem('theme') || 'dark';
+      document.documentElement.setAttribute('data-theme', theme);
+    })();
+  </script>
+
   <!-- Prism.js for syntax highlighting -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css">
-  
+
   <!-- Modular CSS -->
   <link rel="stylesheet" href="css/base.css">
   <link rel="stylesheet" href="css/sidebar.css">
   <link rel="stylesheet" href="css/chat.css">
   <link rel="stylesheet" href="css/messages.css">
   <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#0084ff">
 </head>
 
 <body>
@@ -151,6 +161,22 @@
     </main>
   </div>
 
+  <!-- Profile Modal -->
+  <div class="modal-overlay" id="profileModalOverlay">
+    <div class="profile-modal" id="profileModal">
+      <div class="profile-header">
+        <div class="profile-avatar" id="modalAvatar">?</div>
+        <h2 id="modalUserName">User Name</h2>
+        <span class="status-badge" id="modalUserStatus">Active</span>
+      </div>
+      <div class="profile-actions">
+        <button class="primary-btn" id="modalMessageBtn">Message</button>
+        <button class="secondary-btn" id="modalMentionBtn">@ Mention</button>
+        <button class="close-btn" id="modalCloseBtn">Close</button>
+      </div>
+    </div>
+  </div>
+
   <ul class="cmd-suggest" id="cmdSuggest"></ul>
 
   <!-- Marked.js for Markdown parsing -->
@@ -168,7 +194,7 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-java.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-c.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-cpp.min.js"></script>
-  
+
   <!-- Modular JavaScript -->
   <script src="js/config.js"></script>
   <script src="js/state.js"></script>

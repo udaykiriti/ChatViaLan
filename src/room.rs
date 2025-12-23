@@ -1,8 +1,9 @@
 //! Room management: broadcasting, history, and room switching.
 
 use std::collections::{HashMap, VecDeque};
+use std::fs;
 use uuid::Uuid;
-use tracing::info;
+use tracing::{info, error};
 use crate::types::{Clients, Histories, HistoryItem, Outgoing, Tx};
 use crate::helpers::{client_name_by_id, client_tx_by_id, now_ts};
 
@@ -34,8 +35,8 @@ pub async fn send_system_to_room(clients: &Clients, histories: &Histories, room:
         }
     }
     let s = serde_json::to_string(&msg).unwrap_or_default();
-    let locked = clients.read().await;
-    for c in locked.values() {
+    for r in clients.iter() {
+        let c = r.value();
         if c.room == room {
             let _ = c.tx.send(warp::ws::Message::text(s.clone()));
         }
@@ -59,21 +60,17 @@ pub async fn send_history_to_client_room(tx: &Tx, histories: &Histories, room: &
 
 /// Send user list to all users in a room.
 pub async fn send_user_list_to_room(clients: &Clients, room: &str) {
-    let (names, s) = {
-        let locked = clients.read().await;
-        let names: Vec<String> = locked
-            .values()
-            .filter(|c| c.room == room)
-            .map(|c| c.name.clone())
-            .collect();
-        
-        let msg = Outgoing::List { users: names.clone() };
-        let s = serde_json::to_string(&msg).unwrap_or_default();
-        (names, s)
-    };
+    let names: Vec<String> = clients
+        .iter()
+        .filter(|r| r.value().room == room)
+        .map(|r| r.value().name.clone())
+        .collect();
+    
+    let msg = Outgoing::List { users: names.clone() };
+    let s = serde_json::to_string(&msg).unwrap_or_default();
 
-    let locked = clients.read().await;
-    for c in locked.values() {
+    for r in clients.iter() {
+        let c = r.value();
         if c.room == room {
             let _ = c.tx.send(warp::ws::Message::text(s.clone()));
         }
@@ -113,8 +110,8 @@ pub async fn broadcast_to_room_and_store(
         edited: item.edited,
     };
     if let Ok(s) = serde_json::to_string(&outgoing) {
-        let locked = clients.read().await;
-        for c in locked.values() {
+        for r in clients.iter() {
+            let c = r.value();
             if c.room == room {
                 let _ = c.tx.send(warp::ws::Message::text(s.clone()));
             }
@@ -122,7 +119,8 @@ pub async fn broadcast_to_room_and_store(
         
         // Send mention notifications to mentioned users
         for mentioned in &mentions {
-            for c in locked.values() {
+            for r in clients.iter() {
+                let c = r.value();
                 if c.name.to_lowercase() == mentioned.to_lowercase() && c.room == room {
                     let mention_msg = Outgoing::Mention {
                         from: item.from.clone(),
@@ -185,8 +183,8 @@ pub async fn add_reaction(
         added,
     };
     if let Ok(s) = serde_json::to_string(&msg) {
-        let locked = clients.read().await;
-        for c in locked.values() {
+        for r in clients.iter() {
+            let c = r.value();
             if c.room == room {
                 let _ = c.tx.send(warp::ws::Message::text(s.clone()));
             }
@@ -224,8 +222,8 @@ pub async fn edit_message(
             new_text: new_text.to_string(),
         };
         if let Ok(s) = serde_json::to_string(&msg) {
-            let locked = clients.read().await;
-            for c in locked.values() {
+            for r in clients.iter() {
+                let c = r.value();
                 if c.room == room {
                     let _ = c.tx.send(warp::ws::Message::text(s.clone()));
                 }
@@ -263,8 +261,8 @@ pub async fn delete_message(
             msg_id: msg_id.to_string(),
         };
         if let Ok(s) = serde_json::to_string(&msg) {
-            let locked = clients.read().await;
-            for c in locked.values() {
+            for r in clients.iter() {
+                let c = r.value();
                 if c.room == room {
                     let _ = c.tx.send(warp::ws::Message::text(s.clone()));
                 }
@@ -282,8 +280,8 @@ pub async fn broadcast_read_receipt(clients: &Clients, room: &str, user: &str, l
         last_msg_id: last_msg_id.to_string(),
     };
     if let Ok(s) = serde_json::to_string(&msg) {
-        let locked = clients.read().await;
-        for c in locked.values() {
+        for r in clients.iter() {
+            let c = r.value();
             if c.room == room {
                 let _ = c.tx.send(warp::ws::Message::text(s.clone()));
             }
@@ -300,8 +298,7 @@ pub async fn join_room(client_id: &str, room: &str, clients: &Clients, histories
 
     // Move client to new room and capture old room
     let old_room = {
-        let mut locked = clients.write().await;
-        if let Some(c) = locked.get_mut(client_id) {
+        if let Some(mut c) = clients.get_mut(client_id) {
             let old = c.room.clone();
             c.room = target.to_string();
             old
@@ -340,4 +337,44 @@ pub async fn join_room(client_id: &str, room: &str, clients: &Clients, histories
         ));
     }
     info!("Client {} joined room '{}'", name, target);
+}
+
+/// Broadcast a status update (active/idle) to ALL connected clients.
+pub async fn broadcast_status(clients: &Clients, user: &str, status: &str) {
+    let msg = Outgoing::Status {
+        user: user.to_string(),
+        status: status.to_string(),
+    };
+    if let Ok(s) = serde_json::to_string(&msg) {
+        for r in clients.iter() {
+            let _ = r.value().tx.send(warp::ws::Message::text(s.clone()));
+        }
+    }
+}
+
+pub async fn save_history(histories: &Histories) {
+    let h = histories.read().await;
+    match serde_json::to_string(&*h) {
+        Ok(json) => {
+            if let Err(e) = fs::write("history.json", json) {
+                error!("Failed to save history.json: {}", e);
+            } else {
+                info!("History saved to history.json");
+            }
+        }
+        Err(e) => error!("Failed to serialize history: {}", e),
+    }
+}
+
+pub async fn load_history(histories: &Histories) {
+    if let Ok(json) = fs::read_to_string("history.json") {
+        match serde_json::from_str::<HashMap<String, VecDeque<HistoryItem>>>(&json) {
+            Ok(loaded) => {
+                let mut h = histories.write().await;
+                *h = loaded;
+                info!("Loaded chat history from history.json");
+            }
+            Err(e) => error!("Failed to parse history.json: {}", e),
+        }
+    }
 }

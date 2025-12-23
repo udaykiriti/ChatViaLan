@@ -195,11 +195,10 @@ function initEventListeners() {
             return;
         }
 
-        // User item click for @mention
+        // User item click for Profile Modal
         const item = e.target.closest('.user-item');
         if (item) {
-            DOM.textInput.value = '@' + item.dataset.user + ' ';
-            DOM.textInput.focus();
+            showProfileModal(item.dataset.user);
             closeSidebar();
         }
     };
@@ -375,4 +374,38 @@ function initEventListeners() {
         }
     };
     window.onblur = () => { windowFocused = false; };
+
+    // Modal close events
+    DOM.modalCloseBtn.onclick = hideProfileModal;
+    DOM.profileModalOverlay.onclick = (e) => {
+        if (e.target === DOM.profileModalOverlay) hideProfileModal();
+    };
+}
+
+// ===== Profile Modal Functions =====
+
+function showProfileModal(user) {
+    const status = userStatuses[user] || 'active';
+    DOM.modalUserName.textContent = user;
+    DOM.modalAvatar.textContent = user[0].toUpperCase();
+    DOM.modalUserStatus.textContent = status.charAt(0).toUpperCase() + status.slice(1);
+    DOM.modalUserStatus.className = `status-badge ${status}`;
+
+    DOM.modalMessageBtn.onclick = () => {
+        DOM.textInput.value = `/msg ${user} `;
+        DOM.textInput.focus();
+        hideProfileModal();
+    };
+
+    DOM.modalMentionBtn.onclick = () => {
+        DOM.textInput.value = '@' + user + ' ';
+        DOM.textInput.focus();
+        hideProfileModal();
+    };
+
+    DOM.profileModalOverlay.classList.add('active');
+}
+
+function hideProfileModal() {
+    DOM.profileModalOverlay.classList.remove('active');
 }

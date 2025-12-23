@@ -41,6 +41,10 @@ function connect() {
                 case 'edit': handleEditUpdate(data.msg_id, data.new_text); break;
                 case 'delete': handleDeleteUpdate(data.msg_id); break;
                 case 'readreceipt': break;
+                case 'status':
+                    userStatuses[data.user] = data.status;
+                    sendCommand('/list');
+                    break;
                 case 'mention':
                     if (data.mentioned.toLowerCase() === myName.toLowerCase()) {
                         playNotificationSound();

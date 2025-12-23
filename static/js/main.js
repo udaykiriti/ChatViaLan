@@ -1,7 +1,10 @@
 // ===== Main Entry Point =====
 
 function init() {
+    // Initialize DOM references first!
     initDOM();
+
+    // Initialize features
     initTheme();
     initSound();
     initMobileMenu();
@@ -9,6 +12,11 @@ function init() {
     initEventListeners();
     updateInputState();
     connect();
+
+    // Register Service Worker for PWA (lower priority)
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('/sw.js').catch(() => { });
+    }
 
     // Update timestamps every minute
     setInterval(updateAllTimestamps, 60000);

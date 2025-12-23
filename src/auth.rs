@@ -34,21 +34,19 @@ pub async fn save_users_async(map: HashMap<String, String>) -> anyhow::Result<()
 
 /// Register a new user. Returns Err on duplicate or save error.
 pub async fn register_user(users: &Users, username: &str, password: &str) -> Result<(), String> {
-    {
-        let locked = users.read().await;
-        if locked.contains_key(username) {
-            return Err("username already exists".into());
-        }
+    if users.contains_key(username) {
+        return Err("username already exists".into());
     }
     
     // Hash password with bcrypt
     let hashed = hash(password, DEFAULT_COST).map_err(|e| format!("hash error: {}", e))?;
     
-    let map_to_save = {
-        let mut locked = users.write().await;
-        locked.insert(username.to_string(), hashed);
-        locked.clone()
-    };
+    users.insert(username.to_string(), hashed);
+    
+    // Create a copy for saving (synchronous collection)
+    let map_to_save: HashMap<String, String> = users.iter()
+        .map(|r| (r.key().clone(), r.value().clone()))
+        .collect();
     
     if let Err(e) = save_users_async(map_to_save).await {
         error!("failed to save users: {}", e);
@@ -61,8 +59,8 @@ pub async fn register_user(users: &Users, username: &str, password: &str) -> Res
 
 /// Verify login credentials.
 pub async fn verify_login(users: &Users, username: &str, password: &str) -> bool {
-    let locked = users.read().await;
-    if let Some(stored_hash) = locked.get(username) {
+    if let Some(r) = users.get(username) {
+        let stored_hash = r.value();
         match verify(password, stored_hash) {
             Ok(valid) => valid,
             Err(e) => {

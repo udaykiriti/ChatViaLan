@@ -24,6 +24,7 @@ mod upload;
 use std::collections::{HashMap, VecDeque};
 use std::sync::Arc;
 use tokio::sync::RwLock;
+use dashmap::DashMap;
 use warp::Filter;
 use tracing::{info, warn};
 
@@ -40,22 +41,28 @@ async fn main() -> anyhow::Result<()> {
 
     // Load users from disk
     let users_map = load_users().unwrap_or_default();
-    let users: Users = Arc::new(RwLock::new(users_map));
+    let users: Users = Arc::new(dashmap::DashMap::from_iter(users_map));
 
-    let clients: Clients = Arc::new(RwLock::new(HashMap::new()));
+    let clients: Clients = Arc::new(DashMap::new());
     let histories: Histories = Arc::new(RwLock::new(HashMap::new()));
+
+    // Load history from disk
+    crate::room::load_history(&histories).await;
 
     // Ensure default "lobby" room exists
     {
-        let mut h: tokio::sync::RwLockWriteGuard<HashMap<String, VecDeque<crate::types::HistoryItem>>> = histories.write().await;
+        let mut h = histories.write().await;
         h.entry("lobby".to_string())
             .or_insert_with(|| VecDeque::with_capacity(200));
     }
 
     // Warp filters for shared state
-    let clients_filter = warp::any().map(move || clients.clone());
-    let histories_filter = warp::any().map(move || histories.clone());
-    let users_filter = warp::any().map(move || users.clone());
+    let clients_c = clients.clone();
+    let clients_filter = warp::any().map(move || clients_c.clone());
+    let histories_c = histories.clone();
+    let histories_filter = warp::any().map(move || histories_c.clone());
+    let users_c = users.clone();
+    let users_filter = warp::any().map(move || users_c.clone());
 
     // WebSocket route
     let ws_route = warp::path("ws")
@@ -98,8 +105,81 @@ async fn main() -> anyhow::Result<()> {
         .and_then(|p| p.parse().ok())
         .unwrap_or(8080);
 
+    // Background task for idle detection
+    let clients_idle = clients.clone();
+    tokio::task::spawn(async move {
+        let mut interval = tokio::time::interval(tokio::time::Duration::from_secs(30));
+        let mut statuses: HashMap<String, String> = HashMap::new(); // client_id -> status
+
+        loop {
+            interval.tick().await;
+            let now = std::time::Instant::now();
+            let mut updates = Vec::new();
+
+            for r in clients_idle.iter() {
+                let client_id = r.key().clone();
+                let client = r.value();
+                let last_active = client.last_active;
+                let diff = now.duration_since(last_active);
+
+                let current_status = if diff.as_secs() > 300 { // 5 minutes
+                    "idle"
+                } else {
+                    "active"
+                };
+
+                let prev_status = statuses.get(&client_id).map(|s| s.as_str()).unwrap_or("active");
+                if current_status != prev_status {
+                    updates.push((client.name.clone(), current_status.to_string()));
+                    statuses.insert(client_id, current_status.to_string());
+                }
+            }
+
+            for (name, status) in updates {
+                crate::room::broadcast_status(&clients_idle, &name, &status).await;
+            }
+            
+            // Cleanup statuses for disconnected clients
+            statuses.retain(|id, _| clients_idle.contains_key(id));
+        }
+    });
+
+    // Background task for periodic history saving (every 5 minutes)
+    let histories_saver = histories.clone();
+    tokio::task::spawn(async move {
+        let mut interval = tokio::time::interval(tokio::time::Duration::from_secs(300));
+        loop {
+            interval.tick().await;
+            crate::room::save_history(&histories_saver).await;
+        }
+    });
+
     info!("Server running at http://0.0.0.0:{}/", port);
-    warp::serve(routes).run(([0, 0, 0, 0], port)).await;
+    
+    // Server task
+    let server = warp::serve(routes).run(([0, 0, 0, 0], port));
+
+    // Graceful shutdown with signal handling
+    tokio::select! {
+        _ = server => {
+            info!("Server process finished");
+        }
+        _ = tokio::signal::ctrl_c() => {
+            info!("Shutdown signal received. Cleaning up...");
+            
+            // Save history
+            crate::room::save_history(&histories).await;
+
+            // Force save users before exit
+            let users_map: HashMap<String, String> = users.iter()
+                .map(|r| (r.key().clone(), r.value().clone()))
+                .collect();
+            if let Err(e) = crate::auth::save_users_async(users_map).await {
+                warn!("failed to save users on shutdown: {}", e);
+            }
+            info!("Shutdown complete.");
+        }
+    }
 
     Ok(())
 }

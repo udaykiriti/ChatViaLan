@@ -25,10 +25,10 @@ function appendMessage(id, from, text, ts, reactions = {}, edited = false, reply
   if (replyTo) {
     const replyMsg = allMessages.find(m => m.id === replyTo);
     if (replyMsg) {
-      replyHtml = `<div class="reply-preview">
-        <span class="reply-author">${escapeHtml(replyMsg.from)}</span>
-        <span class="reply-text">${escapeHtml(replyMsg.text.slice(0, 50))}${replyMsg.text.length > 50 ? '...' : ''}</span>
-      </div>`;
+      replyHtml = `<div class="reply-preview" onclick="jumpToMessage('${replyTo}')" style="cursor:pointer">
+          <span class="reply-author">${escapeHtml(replyMsg.from)}</span>
+          <span class="reply-text">${escapeHtml(replyMsg.text.slice(0, 50))}${replyMsg.text.length > 50 ? '...' : ''}</span>
+        </div>`;
     }
   }
 
@@ -56,13 +56,17 @@ function appendMessage(id, from, text, ts, reactions = {}, edited = false, reply
 function updateUsers(users) {
   if (DOM.userCount) DOM.userCount.textContent = `(${users.length})`;
   if (DOM.userList) {
-    DOM.userList.innerHTML = users.map(u => `
-      <li class="user-item" data-user="${escapeHtml(u)}">
-        <div class="user-avatar">${u[0].toUpperCase()}</div>
-        <span>${escapeHtml(u)}</span>
-        <button class="dm-btn" data-user="${escapeHtml(u)}" title="Send DM">💬</button>
-      </li>
-    `).join('');
+    DOM.userList.innerHTML = users.map(u => {
+      const status = userStatuses[u] || 'active';
+      const statusClass = status === 'idle' ? 'status-idle' : 'status-active';
+      return `
+        <li class="user-item" data-user="${escapeHtml(u)}">
+          <div class="user-avatar">${u[0].toUpperCase()}<span class="status-dot ${statusClass}"></span></div>
+          <span>${escapeHtml(u)}</span>
+          <button class="dm-btn" data-user="${escapeHtml(u)}" title="Send DM">💬</button>
+        </li>
+      `;
+    }).join('');
   }
 }
 
@@ -98,10 +102,21 @@ function updatePinnedMessages(messages) {
   DOM.pinnedMessages.innerHTML = `
     <div class="pinned-header">📌 Pinned Messages</div>
     ${messages.map(m => `
-      <div class="pinned-item" data-msg-id="${m.id}">
+      <div class="pinned-item" data-msg-id="${m.id}" onclick="jumpToMessage('${m.id}')">
         <span class="pinned-author">${escapeHtml(m.from)}:</span>
         <span class="pinned-text">${escapeHtml(m.text.slice(0, 60))}${m.text.length > 60 ? '...' : ''}</span>
       </div>
     `).join('')}
   `;
+}
+
+function jumpToMessage(id) {
+  const el = document.querySelector(`.message[data-msg-id="${id}"]`);
+  if (el) {
+    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    el.classList.add('highlight');
+    setTimeout(() => el.classList.remove('highlight'), 2000);
+  } else {
+    appendSystem('Message not found in current view.');
+  }
 }

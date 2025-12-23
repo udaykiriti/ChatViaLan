@@ -4,6 +4,7 @@ use futures::{SinkExt, StreamExt};
 use tokio::sync::mpsc;
 use uuid::Uuid;
 use tracing::{info, warn};
+use std::time::Instant;
 
 use crate::types::{Client, Clients, Histories, Incoming, Outgoing, Tx, Users};
 use crate::auth::{register_user, verify_login};
@@ -163,11 +164,11 @@ pub async fn client_connected(
         last_message_times: Vec::new(),
         is_typing: false,
         last_read_msg_id: None,
+        last_active: Instant::now(),
     };
 
     {
-        let mut locked = clients.write().await;
-        locked.insert(client_id.clone(), client);
+        clients.insert(client_id.clone(), client);
     }
 
     info!("New connection: {} (id: {}, name: {}, logged_in={}, room={})", addr, client_id, chosen_name, logged_in, default_room);
@@ -182,6 +183,11 @@ pub async fn client_connected(
         match result {
             Ok(msg) => {
                 if msg.is_text() {
+                    // Update activity
+                    if let Some(mut r) = clients.get_mut(&client_id) {
+                        r.value_mut().last_active = std::time::Instant::now();
+                    }
+                    
                     if let Ok(text) = msg.to_str() {
                         match serde_json::from_str::<Incoming>(text) {
                             Ok(Incoming::Cmd { cmd }) => {
@@ -199,18 +205,22 @@ pub async fn client_connected(
                             }
                             Ok(Incoming::React { msg_id, emoji }) => {
                                 let (room, name) = {
-                                    let locked = clients.read().await;
-                                    locked.get(&client_id)
-                                        .map(|c| (c.room.clone(), c.name.clone()))
+                                    clients.get(&client_id)
+                                        .map(|r| {
+                                            let c = r.value();
+                                            (c.room.clone(), c.name.clone())
+                                        })
                                         .unwrap_or_default()
                                 };
                                 crate::room::add_reaction(&clients, &histories, &room, &msg_id, &emoji, &name).await;
                             }
                             Ok(Incoming::Edit { msg_id, new_text }) => {
                                 let (room, name) = {
-                                    let locked = clients.read().await;
-                                    locked.get(&client_id)
-                                        .map(|c| (c.room.clone(), c.name.clone()))
+                                    clients.get(&client_id)
+                                        .map(|r| {
+                                            let c = r.value();
+                                            (c.room.clone(), c.name.clone())
+                                        })
                                         .unwrap_or_default()
                                 };
                                 let edited = crate::room::edit_message(&clients, &histories, &room, &msg_id, &new_text, &name).await;
@@ -223,9 +233,11 @@ pub async fn client_connected(
                             }
                             Ok(Incoming::Delete { msg_id }) => {
                                 let (room, name) = {
-                                    let locked = clients.read().await;
-                                    locked.get(&client_id)
-                                        .map(|c| (c.room.clone(), c.name.clone()))
+                                    clients.get(&client_id)
+                                        .map(|r| {
+                                            let c = r.value();
+                                            (c.room.clone(), c.name.clone())
+                                        })
                                         .unwrap_or_default()
                                 };
                                 let deleted = crate::room::delete_message(&clients, &histories, &room, &msg_id, &name).await;
@@ -238,8 +250,8 @@ pub async fn client_connected(
                             }
                             Ok(Incoming::MarkRead { last_msg_id }) => {
                                 let (room, name) = {
-                                    let mut locked = clients.write().await;
-                                    if let Some(c) = locked.get_mut(&client_id) {
+                                    if let Some(mut r) = clients.get_mut(&client_id) {
+                                        let c = r.value_mut();
                                         c.last_read_msg_id = Some(last_msg_id.clone());
                                         (c.room.clone(), c.name.clone())
                                     } else {
@@ -269,10 +281,7 @@ pub async fn client_connected(
     }
 
     // Cleanup
-    let left_room = {
-        let mut locked = clients.write().await;
-        locked.remove(&client_id).map(|c| c.room)
-    };
+    let left_room = clients.remove(&client_id).map(|(_, c)| c.room);
 
     if let Some(room) = left_room {
         send_system_to_room(&clients, &histories, &room, &format!("-- {} left the room --", chosen_name)).await;

@@ -5,18 +5,19 @@ use std::sync::Arc;
 use std::time::Instant;
 use tokio::sync::{mpsc, RwLock};
 use serde::{Deserialize, Serialize};
+use dashmap::DashMap;
 
 /// Sender channel for WebSocket messages to a client.
 pub type Tx = mpsc::UnboundedSender<warp::ws::Message>;
 
 /// Connected clients map: client_id -> Client
-pub type Clients = Arc<RwLock<HashMap<String, Client>>>;
+pub type Clients = Arc<DashMap<String, Client>>;
 
 /// Per-room message histories: room_name -> VecDeque<HistoryItem>
 pub type Histories = Arc<RwLock<HashMap<String, VecDeque<HistoryItem>>>>;
 
 /// Registered users: username -> password_hash
-pub type Users = Arc<RwLock<HashMap<String, String>>>;
+pub type Users = Arc<DashMap<String, String>>;
 
 /// Represents a connected client.
 #[derive(Clone)]
@@ -28,6 +29,7 @@ pub struct Client {
     pub last_message_times: Vec<Instant>, // For rate limiting
     pub is_typing: bool,
     pub last_read_msg_id: Option<String>, // For read receipts
+    pub last_active: Instant,             // For online status
 }
 
 /// A single message in the chat history.
@@ -60,6 +62,7 @@ pub enum Outgoing {
     ReadReceipt { user: String, last_msg_id: String },
     Mention { from: String, text: String, mentioned: String },
     RoomList { rooms: Vec<RoomInfo> },
+    Status { user: String, status: String }, // "active", "idle", "offline"
 }
 
 /// Room info for available rooms list.

@@ -179,3 +179,121 @@ body {
         font-size: 0.8rem;
     }
 }
+
+/* ===== Modals & Overlays ===== */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.7);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 2000;
+    animation: fadeIn 0.2s ease;
+}
+
+.modal-overlay.active {
+    display: flex;
+}
+
+.profile-modal {
+    background: var(--surface);
+    width: 300px;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+    border: 1px solid var(--border);
+    animation: zoomIn 0.3s cubic-bezier(0.18, 0.89, 0.32, 1.28);
+}
+
+@keyframes zoomIn {
+    from {
+        opacity: 0;
+        transform: scale(0.85);
+    }
+
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+.profile-header {
+    padding: 24px;
+    text-align: center;
+    border-bottom: 1px solid var(--border);
+    background: linear-gradient(135deg, var(--bg-secondary), var(--surface));
+}
+
+.profile-avatar {
+    width: 64px;
+    height: 64px;
+    background: var(--primary);
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2rem;
+    font-weight: bold;
+    margin: 0 auto 12px;
+}
+
+.profile-header h2 {
+    font-size: 1.2rem;
+    margin-bottom: 4px;
+}
+
+.status-badge {
+    font-size: 0.8rem;
+    padding: 2px 8px;
+    border-radius: 10px;
+}
+
+.status-badge.active {
+    color: #44b700;
+    background: rgba(68, 183, 0, 0.1);
+}
+
+.status-badge.idle {
+    color: #faa61a;
+    background: rgba(250, 166, 26, 0.1);
+}
+
+.profile-actions {
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.profile-actions button {
+    padding: 10px;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+    font-weight: 600;
+    transition: filter 0.2s;
+}
+
+.primary-btn {
+    background: var(--primary);
+    color: white;
+}
+
+.secondary-btn {
+    background: var(--surface-elevated);
+    color: var(--text);
+}
+
+.close-btn {
+    background: transparent;
+    color: var(--text-muted);
+}
+
+.profile-actions button:hover {
+    filter: brightness(1.1);
+}
