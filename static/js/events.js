@@ -262,24 +262,70 @@ function initEventListeners() {
         }, 5000);
     };
 
-    // File upload
-    DOM.uploadBtn.onclick = async () => {
+    // File upload with progress
+    DOM.uploadBtn.onclick = () => {
         if (!DOM.fileInput.files?.length) return DOM.uploadMsg.textContent = 'Select a file first';
+
+        const file = DOM.fileInput.files[0];
         const fd = new FormData();
-        fd.append('file', DOM.fileInput.files[0]);
+        fd.append('file', file);
+
         DOM.uploadBtn.disabled = true;
         DOM.uploadMsg.textContent = 'Uploading...';
-        try {
-            const res = await fetch('/upload', { method: 'POST', body: fd });
-            const j = await res.json();
-            if (j.ok && j.files?.length) {
-                j.files.forEach(f => sendMessage(`📎 ${f.filename}: ${location.origin}${f.url}`));
-                DOM.uploadMsg.textContent = 'Done!';
-                DOM.fileInput.value = '';
-            } else DOM.uploadMsg.textContent = 'Upload failed';
-        } catch (e) { DOM.uploadMsg.textContent = 'Error: ' + e; }
-        DOM.uploadBtn.disabled = false;
-        setTimeout(() => DOM.uploadMsg.textContent = '', 3000);
+
+        // Show progress bar
+        const progressEl = document.getElementById('uploadProgress');
+        if (progressEl) {
+            progressEl.style.display = 'block';
+            progressEl.value = 0;
+            progressEl.max = 100;
+        }
+
+        const xhr = new XMLHttpRequest();
+        xhr.open('POST', '/upload', true);
+
+        xhr.upload.onprogress = (e) => {
+            if (e.lengthComputable) {
+                const percent = (e.loaded / e.total) * 100;
+                if (progressEl) progressEl.value = percent;
+                DOM.uploadMsg.textContent = `${Math.round(percent)}%`;
+            }
+        };
+
+        xhr.onload = () => {
+            if (xhr.status === 200) {
+                try {
+                    const j = JSON.parse(xhr.responseText);
+                    if (j.ok && j.files?.length) {
+                        j.files.forEach(f => sendMessage(`📎 ${f.filename}: ${location.origin}${f.url}`));
+                        DOM.uploadMsg.textContent = 'Done!';
+                        DOM.fileInput.value = '';
+                    } else {
+                        DOM.uploadMsg.textContent = 'Upload failed';
+                    }
+                } catch (e) {
+                    DOM.uploadMsg.textContent = 'Error parsing response';
+                }
+            } else {
+                DOM.uploadMsg.textContent = `Error: ${xhr.status}`;
+            }
+            DOM.uploadBtn.disabled = false;
+            // Hide progress after success
+            setTimeout(() => {
+                if (progressEl) {
+                    progressEl.style.display = 'none';
+                    progressEl.value = 0;
+                }
+                DOM.uploadMsg.textContent = '';
+            }, 3000);
+        };
+
+        xhr.onerror = () => {
+            DOM.uploadMsg.textContent = 'Network Error';
+            DOM.uploadBtn.disabled = false;
+        };
+
+        xhr.send(fd);
     };
 
     // Close suggestions / emoji picker on outside click

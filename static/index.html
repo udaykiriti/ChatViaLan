@@ -15,7 +15,7 @@
   </script>
 
   <!-- Prism.js for syntax highlighting -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css">
+  <link rel="stylesheet" href="libs/prism/prism-tomorrow.min.css">
 
   <!-- Modular CSS -->
   <link rel="stylesheet" href="css/base.css">
@@ -155,7 +155,10 @@
         </div>
         <div class="upload-row">
           <button id="uploadBtn" disabled>Upload</button>
-          <span id="uploadMsg"></span>
+          <div class="progress-container" style="display:flex; align-items:center; gap:8px;">
+            <progress id="uploadProgress" value="0" max="100" style="width:100px; display:none;"></progress>
+            <span id="uploadMsg"></span>
+          </div>
         </div>
       </div>
     </main>
@@ -199,21 +202,20 @@
 
   <ul class="cmd-suggest" id="cmdSuggest"></ul>
 
-  <!-- Marked.js for Markdown parsing -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/9.1.6/marked.min.js"></script>
-  <!-- Prism.js for syntax highlighting -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-javascript.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-python.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-rust.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-css.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-bash.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-json.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-typescript.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-go.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-java.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-c.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-cpp.min.js"></script>
+  <!-- Local Libraries -->
+  <script src="libs/marked.min.js"></script>
+  <script src="libs/prism/prism.min.js"></script>
+  <script src="libs/prism/components/prism-javascript.min.js"></script>
+  <script src="libs/prism/components/prism-python.min.js"></script>
+  <script src="libs/prism/components/prism-rust.min.js"></script>
+  <script src="libs/prism/components/prism-css.min.js"></script>
+  <script src="libs/prism/components/prism-bash.min.js"></script>
+  <script src="libs/prism/components/prism-json.min.js"></script>
+  <script src="libs/prism/components/prism-typescript.min.js"></script>
+  <script src="libs/prism/components/prism-go.min.js"></script>
+  <script src="libs/prism/components/prism-java.min.js"></script>
+  <script src="libs/prism/components/prism-c.min.js"></script>
+  <script src="libs/prism/components/prism-cpp.min.js"></script>
 
   <!-- Modular JavaScript -->
   <script src="js/config.js"></script>

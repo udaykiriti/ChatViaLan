@@ -89,7 +89,8 @@ async fn main() -> anyhow::Result<()> {
     // File upload route
     let upload_route = warp::path("upload")
         .and(warp::post())
-        .and(warp::multipart::form().max_length(599_368_709))
+        // 5 GB limit
+        .and(warp::multipart::form().max_length(5_368_709_120))
         .and_then(handle_upload);
 
     // Combine routes
@@ -110,6 +111,32 @@ async fn main() -> anyhow::Result<()> {
         .ok()
         .and_then(|p| p.parse().ok())
         .unwrap_or(8080);
+    
+    // Start mDNS Responder (for LAN discovery)
+    // Start mDNS Responder (for LAN discovery)
+    let mdns = mdns_sd::ServiceDaemon::new().expect("Failed to create mDNS daemon");
+    let service_type = "_http._tcp.local.";
+    let instance_name = "RustChat";
+    let hostname = "rustchat.local.";
+    
+    // Minimal properties for iOS
+    let mut txt_props = HashMap::new();
+    txt_props.insert("path".to_string(), "/".to_string());
+
+    let service_info = mdns_sd::ServiceInfo::new(
+        service_type,
+        instance_name,
+        hostname,
+        "", 
+        port,
+        txt_props,
+    ).expect("valid service info");
+    
+    // Register and keep alive
+    mdns.register(service_info).expect("Failed to register mDNS service");
+    info!("mDNS registered: {}.{}", instance_name, service_type);
+    println!("Broadcast (mDNS): http://rustchat.local:{}", port);
+    println!("(Note: If mDNS fails, check local firewall: UDP 5353 must be open)");
 
     // Background task for idle detection
     let clients_idle = clients.clone();
@@ -159,6 +186,18 @@ async fn main() -> anyhow::Result<()> {
             crate::room::save_history(&histories_saver).await;
         }
     });
+
+    // Print LAN Connection Info (QR Code)
+    if let Ok(ip) = local_ip_address::local_ip() {
+        let address = format!("http://{}:{}", ip, port);
+        println!("\n\x1b[32m========================================\x1b[0m");
+        println!("LAN CONNECT: Scan this to join!");
+        println!("\x1b[32m========================================\x1b[0m");
+        qr2term::print_qr(address.clone()).unwrap();
+        println!("Server URL: {}\n", address);
+    } else {
+        println!("Could not detect local IP. Use http://localhost:{}", port);
+    }
 
     info!("Server running at http://0.0.0.0:{}/", port);
     
