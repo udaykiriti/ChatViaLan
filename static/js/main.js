@@ -5,7 +5,6 @@ function init() {
     initDOM();
 
     // Initialize features
-    initTheme();
     initSound();
     initMobileMenu();
     buildEmojiPicker();
@@ -19,7 +18,6 @@ function init() {
         navigator.serviceWorker.getRegistrations().then(function (registrations) {
             for (let registration of registrations) {
                 registration.unregister();
-                console.log("Service Worker unregistered to clear cache.");
             }
         });
     }

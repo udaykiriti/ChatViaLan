@@ -22,6 +22,7 @@ pub async fn client_connected(
     histories: Histories,
     private_histories: PrivateHistories,
     users: Users,
+    metrics: std::sync::Arc<crate::metrics::ServerMetrics>,
 ) {
     let addr = remote
         .map(|a| a.to_string())
@@ -156,21 +157,21 @@ pub async fn client_connected(
         }
     }
 
-    // Register client in default room
+    // Register the client
     let client = Client {
         name: chosen_name.clone(),
         tx: tx.clone(),
-        logged_in,
         room: default_room.clone(),
         last_message_times: Vec::new(),
         is_typing: false,
         last_read_msg_id: None,
         last_active: Instant::now(),
+        logged_in,
     };
-
-    {
-        clients.insert(client_id.clone(), client);
-    }
+    clients.insert(client_id.clone(), client);
+    
+    // Increment connection counter
+    metrics.increment_connections();
 
     info!("New connection: {} (id: {}, name: {}, logged_in={}, room={})", addr, client_id, chosen_name, logged_in, default_room);
 
@@ -196,7 +197,7 @@ pub async fn client_connected(
                             }
                             Ok(Incoming::Msg { text }) => {
                                 if check_rate_limit(&clients, &client_id).await {
-                                    handle_message_with_rooms(&client_id, &text, &clients, &histories).await;
+                                    handle_message_with_rooms(&client_id, &text, &clients, &histories, &metrics).await;
                                     set_typing_status(&clients, &client_id, false).await;
                                 }
                             }
@@ -265,7 +266,7 @@ pub async fn client_connected(
                             }
                             Err(_) => {
                                 if check_rate_limit(&clients, &client_id).await {
-                                    handle_message_with_rooms(&client_id, text, &clients, &histories).await;
+                                    handle_message_with_rooms(&client_id, text, &clients, &histories, &metrics).await;
                                 }
                             }
                         }

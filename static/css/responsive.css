@@ -1,0 +1,159 @@
+/* ===== Responsive & Mobile Optimization (The "Cooked" Style) ===== */
+
+/* Use dvh for viewport height to handle mobile browser bars */
+:root {
+    --vh: 100dvh;
+}
+
+html,
+body {
+    height: 100%;
+    height: var(--vh);
+    overflow: hidden;
+    overscroll-behavior: none;
+    /* Prevent bounce */
+}
+
+/* ===== Tablet & Mobile (< 768px) ===== */
+@media (max-width: 768px) {
+
+    /* 1. App Layout - Sidebar Drawer */
+    .app {
+        position: relative;
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+    }
+
+    .sidebar {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 85%;
+        max-width: 320px;
+        height: 100%;
+        z-index: 100;
+        transform: translateX(-100%);
+        transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        box-shadow: 2px 0 12px rgba(0, 0, 0, 0.3);
+    }
+
+    .sidebar.open,
+    .sidebar.active {
+        transform: translateX(0);
+    }
+
+    .sidebar-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.6);
+        z-index: 90;
+        opacity: 0;
+        visibility: hidden;
+        transition: opacity 0.3s;
+        backdrop-filter: blur(2px);
+    }
+
+    .sidebar-overlay.open,
+    .sidebar-overlay.active {
+        opacity: 1;
+        visibility: visible;
+    }
+
+    .close-sidebar {
+        display: flex !important;
+    }
+
+    /* 2. Menu Button Visibility */
+    .menu-btn {
+        display: flex !important;
+    }
+
+    /* 3. Modal Bottom Sheet Style */
+    .modal-overlay {
+        align-items: flex-end;
+        /* Align to bottom */
+    }
+
+    .profile-modal {
+        width: 100%;
+        max-width: 100%;
+        border-radius: 20px 20px 0 0;
+        margin: 0;
+        transform: translateY(100%);
+        animation: slideUpSheet 0.3s forwards cubic-bezier(0.2, 0.9, 0.3, 1);
+    }
+
+    @keyframes slideUpSheet {
+        from {
+            transform: translateY(100%);
+        }
+
+        to {
+            transform: translateY(0);
+        }
+    }
+
+    /* 4. Chat Area Adjustments */
+    .messages {
+        padding: 12px;
+        padding-bottom: 80px;
+        /* Space for input area */
+    }
+
+    .message {
+        max-width: 85%;
+    }
+
+    /* 5. Mobile Input Area */
+    .chat-input {
+        padding: 8px;
+    }
+
+    .input-row {
+        gap: 6px;
+    }
+
+    /* Hide less important buttons on super small screens if needed */
+}
+
+/* ===== Small Mobile (< 480px) ===== */
+@media (max-width: 480px) {
+
+    /* Optimize Header */
+    .chat-header {
+        padding: 8px 12px;
+    }
+
+    .header-right input {
+        width: 0;
+        padding: 0;
+        border: none;
+        background: transparent;
+        visibility: hidden;
+    }
+
+    /* Fat Finger Targets */
+    .emoji-btn,
+    .attach-btn {
+        width: 40px;
+        height: 40px;
+        font-size: 1.2rem;
+    }
+
+    #sendBtn {
+        padding: 0 12px !important;
+    }
+
+    /* Message Bubbles */
+    .message-bubble {
+        font-size: 0.9rem;
+        padding: 8px 12px;
+    }
+}
+
+/* ===== Theme Specifics for Mobile ===== */
+/* (Themes are now unified in msn.css, no overrides needed) */

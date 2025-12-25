@@ -1,0 +1,315 @@
+/* ===== MSN Messenger (WLM 2009) Theme ===== */
+
+:root {
+    /* Aero Blue Palette */
+    --msn-bg-top: #a9cceb;
+    --msn-bg-bottom: #5a8dc6;
+    --msn-header-top: #f4f8fd;
+    --msn-header-bottom: #c5dcf7;
+    --msn-details-pane: #eef3fa;
+
+    --msn-border: #6e92ba;
+    --msn-border-highlight: #ffffff;
+
+    --msn-text: #1e3a5a;
+    --msn-text-dim: #506a8e;
+
+    --msn-green: #6bc04a;
+    /* Status Green */
+    --msn-orange: #f7a22e;
+    /* Status Away */
+
+    /* Overrides */
+    --bg: #e6f0fa;
+    --bg-secondary: #f0f6fc;
+    --surface: #ffffff;
+    --surface-elevated: #ffffff;
+    --border: #abc0d9;
+    --text: #000000;
+    --text-secondary: #444444;
+    --text-muted: #666666;
+
+    --primary: #3c7fb3;
+    --primary-rgb: 60, 127, 179;
+    --primary-hover: #5a9dd0;
+
+    --sent-bubble: #e1eefc;
+    --received-bubble: #ffffff;
+
+    --radius: 3px;
+    --radius-sm: 2px;
+}
+
+/* ===== Global Aero Look ===== */
+body {
+    background: linear-gradient(135deg, var(--msn-bg-top) 0%, var(--msn-bg-bottom) 100%);
+    font-family: 'Segoe UI', 'Tahoma', sans-serif;
+    color: var(--msn-text);
+}
+
+.app {
+    margin: 20px auto;
+    width: 95%;
+    max-width: 1200px;
+    height: 90vh;
+    border: 1px solid #4a6b8f;
+    border-radius: 8px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.4);
+    background: #eef4fb;
+    display: flex;
+    overflow: hidden;
+}
+
+/* ===== Sidebar (Contact List) ===== */
+.sidebar {
+    background: #ffffff;
+    border-right: 1px solid var(--msn-border);
+    width: 280px;
+}
+
+.sidebar-header {
+    background: linear-gradient(to bottom, var(--msn-header-top) 0%, var(--msn-header-bottom) 100%);
+    border-bottom: 1px solid var(--msn-border);
+    padding: 10px;
+    box-shadow: inset 0 -1px 0 rgba(255, 255, 255, 0.4);
+}
+
+.sidebar-header h2 {
+    color: #1a4067;
+    text-shadow: 0 1px 0 #ffffff;
+    font-size: 14px;
+    font-weight: bold;
+}
+
+.sidebar-section {
+    background: transparent;
+    border-bottom: none;
+}
+
+.section-title {
+    background: linear-gradient(to right, #eff6fe, #ffffff);
+    color: #3b5b7e;
+    font-weight: bold;
+    font-size: 11px;
+    padding: 4px 8px;
+    border-top: 1px solid #dce8f5;
+    border-bottom: 1px solid #dce8f5;
+    text-transform: uppercase;
+}
+
+.user-item,
+.room-item {
+    padding: 6px 10px;
+    border-bottom: 1px solid transparent;
+}
+
+.user-item:hover,
+.room-item:hover {
+    background: linear-gradient(to bottom, #fff8e3, #ffe6a0);
+    border: 1px solid #e8c376;
+    border-radius: 2px;
+}
+
+.user-avatar {
+    border-radius: 2px !important;
+    border: 1px solid #c7d4e3;
+    box-shadow: 1px 1px 2px rgba(0, 0, 0, 0.1);
+    background: white;
+    color: var(--msn-text);
+    padding: 1px;
+}
+
+.status-dot {
+    border: 1px solid white;
+    box-shadow: 0 1px 1px rgba(0, 0, 0, 0.2);
+}
+
+.status-active,
+.status-dot.connected {
+    background: var(--msn-green) !important;
+}
+
+.status-idle {
+    background: var(--msn-orange) !important;
+}
+
+/* ===== Chat Window ===== */
+.chat-main {
+    background: #ffffff;
+}
+
+.chat-header {
+    background: linear-gradient(to bottom, var(--msn-header-top) 0%, #d4e6fc 50%, #c1dcf8 51%, #dcebfd 100%);
+    border-bottom: 1px solid var(--msn-border);
+    height: 60px;
+}
+
+.header-center {
+    text-align: left;
+    padding-left: 10px;
+}
+
+#currentRoom {
+    color: #1e3a5a;
+    font-size: 16px;
+    text-shadow: 0 1px 0 white;
+}
+
+/* ===== Messages ("Conversation History") ===== */
+.messages {
+    background: #ffffff;
+}
+
+.message {
+    margin-bottom: 4px;
+    animation: none !important;
+    opacity: 1 !important;
+    /* Disable slide animations for instant feel */
+}
+
+.message-bubble {
+    border-radius: 4px !important;
+    box-shadow: none !important;
+    border: none !important;
+    padding: 4px 8px !important;
+    font-size: 13px;
+    background: transparent !important;
+}
+
+/* Retro Format: Name says: Message */
+.message-header {
+    margin-bottom: 0;
+}
+
+.message-author {
+    color: #666;
+    font-size: 11px;
+    margin-right: 4px;
+}
+
+.message.sent .message-author {
+    display: inline;
+    /* Show author for sent too */
+    color: #3c7fb3;
+}
+
+.message.sent {
+    align-items: flex-start;
+    /* Align left like received */
+}
+
+.message.sent .message-bubble {
+    color: black !important;
+}
+
+/* We want to make it look like: 
+   Uday says:
+   Hello there! 
+*/
+/* Actually, WLM 2009 had distinct blocks. 
+   Let's do:
+   [Header: Name (Time)]
+   [Body: Message] 
+*/
+
+.message-header {
+    background: #f0f6fc;
+    padding: 2px 6px;
+    border-radius: 2px;
+    display: inline-block;
+}
+
+.message.sent .message-header {
+    background: #eef3fa;
+}
+
+.message.sent .message-author::after,
+.message.received .message-author::after {
+    content: " says:";
+}
+
+/* ===== Inputs "Typing Area" ===== */
+.chat-input {
+    background: #f0f6fc;
+    border-top: 1px solid #abc0d9;
+    padding: 10px;
+}
+
+#textInput {
+    border: 1px solid #7f9db9;
+    background: white;
+    border-radius: 0 !important;
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.05);
+    /* Sunken */
+}
+
+#sendBtn,
+#uploadBtn,
+.menu-btn {
+    background: linear-gradient(to bottom, #fcfcfc 0%, #e8e8e8 100%);
+    border: 1px solid #b0b0b0;
+    border-radius: 3px;
+    color: black;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+    font-weight: normal;
+}
+
+#sendBtn:hover {
+    background: linear-gradient(to bottom, #dbebfc 0%, #c1dcfc 100%);
+    border-color: #98b8e8;
+}
+
+/* ===== Scrollbars ===== */
+::-webkit-scrollbar {
+    width: 14px;
+}
+
+::-webkit-scrollbar-track {
+    background: #f5f5f5;
+    border-left: 1px solid #e0e0e0;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #c2d5ed;
+    border: 1px solid #a3b8d6;
+    border-radius: 0;
+    box-shadow: inset 1px 1px 0 white;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #a3c2e6;
+}
+
+/* ===== Buttons ===== */
+.theme-toggle,
+.close-sidebar {
+    background: transparent !important;
+    color: #555 !important;
+    border: none !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
+}
+
+.theme-toggle:hover {
+    background: rgba(255, 255, 255, 0.5) !important;
+}
+
+/* ===== Hide Modern Polish ===== */
+.glass-panel {
+    backdrop-filter: none !important;
+    background: white !important;
+    border: 1px solid #89aace !important;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3) !important;
+}
+
+/* Reset rounded corners */
+* {
+    border-radius: var(--radius-sm);
+}
+
+/* Input Focus */
+input:focus {
+    outline: 2px solid #bcd4f6 !important;
+    box-shadow: none !important;
+    border-color: #7f9db9 !important;
+}

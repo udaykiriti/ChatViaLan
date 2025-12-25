@@ -9,6 +9,8 @@
     --text-secondary: #b0b3b8;
     --text-muted: #8a8d91;
     --primary: #0084ff;
+    --primary-rgb: 0, 132, 255;
+    --primary-hover: #0078e8;
     --primary-hover: #0078e8;
     --sent-bubble: #0084ff;
     --received-bubble: #3a3b3c;

@@ -77,6 +77,12 @@ function connect() {
     ws.onerror = () => {
         DOM.connStatus.textContent = 'error';
         DOM.statusDot.classList.remove('connected');
+        // Ensure we try to reconnect if error doesn't trigger close
+        if (ws.readyState === WebSocket.CLOSED || ws.readyState === WebSocket.CLOSING) {
+            // onclose will handle it
+        } else {
+            ws.close(); // Force close to trigger onclose reconnection
+        }
     };
 }
 
@@ -144,4 +150,13 @@ function sendEdit(msgId, newText) {
 function sendDelete(msgId) {
     if (!connected) return;
     ws.send(JSON.stringify({ type: 'delete', msg_id: msgId }));
+}
+
+function sendTypingStatus(isTyping) {
+    if (!connected) return;
+    // Don't send if state hasn't changed (optimization)
+    if (window.lastTypingState === isTyping) return;
+    window.lastTypingState = isTyping;
+
+    ws.send(JSON.stringify({ type: 'typing', is_typing: isTyping }));
 }

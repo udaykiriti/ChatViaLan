@@ -261,6 +261,7 @@ pub async fn handle_message_with_rooms(
     text: &str,
     clients: &Clients,
     histories: &Histories,
+    metrics: &std::sync::Arc<crate::metrics::ServerMetrics>,
 ) {
     let from = client_name_by_id(clients, client_id).await;
     let room = get_client_room(clients, client_id).await;
@@ -275,6 +276,9 @@ pub async fn handle_message_with_rooms(
         deleted: false,
     };
     broadcast_to_room_and_store(clients, histories, &room, item.clone()).await;
+    
+    // Increment message counter
+    metrics.increment_messages();
     
     // Check for URLs and fetch previews
     static URL_RE: std::sync::OnceLock<regex::Regex> = std::sync::OnceLock::new();

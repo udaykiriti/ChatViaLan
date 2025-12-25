@@ -20,6 +20,7 @@ mod helpers;
 mod rate_limit;
 mod typing;
 mod upload;
+mod metrics;
 
 use std::collections::{HashMap, VecDeque};
 use std::sync::Arc;
@@ -47,6 +48,9 @@ async fn main() -> anyhow::Result<()> {
     let histories: Histories = Arc::new(RwLock::new(HashMap::new()));
     let private_histories: PrivateHistories = Arc::new(RwLock::new(HashMap::new()));
 
+    // Initialize server metrics
+    let server_metrics = Arc::new(crate::metrics::ServerMetrics::new());
+
     // Load history from disk
     crate::room::load_history(&histories).await;
 
@@ -68,6 +72,45 @@ async fn main() -> anyhow::Result<()> {
     let private_histories_filter = warp::any().map(move || private_histories_c.clone());
     let users_c = users.clone();
     let users_filter = warp::any().map(move || users_c.clone());
+    
+    // Metrics filter
+    let metrics_c = server_metrics.clone();
+    let metrics_filter = warp::any().map(move || metrics_c.clone());
+
+    // Health endpoint
+    let health_route = warp::path("health")
+        .and(warp::get())
+        .and(clients_filter.clone())
+        .and(metrics_filter.clone())
+        .map(|clients: crate::types::Clients, metrics: Arc<crate::metrics::ServerMetrics>| {
+            let response = serde_json::json!({
+                "status": "ok",
+                "uptime": metrics.uptime_secs(),
+                "clients": clients.len()
+            });
+            warp::reply::json(&response)
+        });
+
+    // Metrics endpoint
+    let metrics_route = warp::path("metrics")
+        .and(warp::get())
+        .and(clients_filter.clone())
+        .and(histories_filter.clone())
+        .and(metrics_filter.clone())
+        .and_then(|clients: crate::types::Clients, 
+                   histories: crate::types::Histories, 
+                   metrics: Arc<crate::metrics::ServerMetrics>| async move {
+            let room_count = histories.read().await.len();
+            let response = serde_json::json!({
+                "uptime_seconds": metrics.uptime_secs(),
+                "memory_mb": metrics.memory_usage_mb(),
+                "total_messages": metrics.get_total_messages(),
+                "active_clients": clients.len(),
+                "active_rooms": room_count,
+                "total_connections": metrics.get_total_connections()
+            });
+            Ok::<_, warp::Rejection>(warp::reply::json(&response))
+        });
 
     // WebSocket route
     let ws_route = warp::path("ws")
@@ -77,8 +120,9 @@ async fn main() -> anyhow::Result<()> {
         .and(histories_filter)
         .and(private_histories_filter)
         .and(users_filter)
-        .map(|ws: warp::ws::Ws, remote, clients, histories, private_histories, users| {
-            ws.on_upgrade(move |socket| client_connected(socket, remote, clients, histories, private_histories, users))
+        .and(metrics_filter)
+        .map(|ws: warp::ws::Ws, remote, clients, histories, private_histories, users, metrics| {
+            ws.on_upgrade(move |socket| client_connected(socket, remote, clients, histories, private_histories, users, metrics))
         });
 
     // Static file routes
@@ -95,6 +139,8 @@ async fn main() -> anyhow::Result<()> {
 
     // Combine routes
     let routes = ws_route
+        .or(health_route)
+        .or(metrics_route)
         .or(index_route)
         .or(static_route)
         .or(uploads_route)

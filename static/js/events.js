@@ -37,9 +37,6 @@ function showAuthMsg(msg, isError = false) {
 // ===== Event Listeners =====
 
 function initEventListeners() {
-    // Theme toggle
-    DOM.themeToggle.onclick = toggleTheme;
-
     // Name setting (Enter key support)
     DOM.nameInput.onkeydown = (e) => {
         if (e.key === 'Enter') DOM.setNameBtn.click();

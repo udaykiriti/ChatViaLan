@@ -1,105 +1,129 @@
-/* ===== Visual Polish Styles ===== */
+/* ===== Premium Polish Styles "Cooked" Edition ===== */
 
-/* ===== Empty State ===== */
-.empty-state {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    height: 100%;
-    color: var(--text-muted);
-    text-align: center;
-    padding: 40px;
-    animation: fadeIn 0.5s ease;
+/* ===== 1. Modern Typography & Rendering ===== */
+body {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
 }
 
-.empty-state-icon {
-    font-size: 4rem;
-    margin-bottom: 16px;
-    opacity: 0.5;
+/* ===== 2. Global Scrollbar Polish ===== */
+::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
 }
 
-.empty-state-title {
-    font-size: 1.2rem;
-    font-weight: 600;
-    margin-bottom: 8px;
-    color: var(--text-secondary);
+::-webkit-scrollbar-track {
+    background: transparent;
 }
 
-.empty-state-text {
-    font-size: 0.9rem;
-    max-width: 300px;
-    line-height: 1.5;
+::-webkit-scrollbar-thumb {
+    background: rgba(128, 128, 128, 0.2);
+    border-radius: 4px;
+    transition: background 0.2s;
 }
 
-@keyframes fadeIn {
+::-webkit-scrollbar-thumb:hover {
+    background: rgba(128, 128, 128, 0.4);
+}
+
+/* ===== 3. High-Fidelity Glassmorphism ===== */
+.glass-panel {
+    background: rgba(var(--surface-rgb, 36, 37, 38), 0.7);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.modal-overlay.active {
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    background: rgba(0, 0, 0, 0.6);
+    transition: all 0.3s ease;
+}
+
+.profile-modal {
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.1);
+    transform: translateY(0);
+    animation: modalPop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+@keyframes modalPop {
     from {
         opacity: 0;
-        transform: translateY(10px);
+        transform: translateY(20px) scale(0.95);
     }
 
     to {
         opacity: 1;
-        transform: translateY(0);
+        transform: translateY(0) scale(1);
     }
 }
 
-/* ===== Enhanced Hover Effects ===== */
-.reaction-btn {
-    transition: transform 0.15s ease, background 0.15s ease;
-}
-
-.reaction-btn:hover {
-    transform: scale(1.1);
-}
-
-.add-reaction-btn {
-    transition: all 0.15s ease;
-}
-
-.add-reaction-btn:hover {
-    background: var(--primary);
-    color: white;
-    border-style: solid;
-}
-
-.action-btn {
-    transition: transform 0.1s ease, opacity 0.1s ease;
-}
-
-.action-btn:hover {
-    transform: scale(1.15);
-}
-
-/* ===== Sidebar Item Hover Effects ===== */
+/* ===== 4. Interactive Micro-Animations ===== */
+button,
 .room-item,
-.user-item {
-    transition: background 0.15s ease, transform 0.1s ease;
+.user-item,
+.reaction-btn,
+.image-preview,
+.link-preview {
+    transition: all 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
 }
 
-.room-item:hover,
-.user-item:hover {
-    background: var(--surface-elevated);
-    transform: translateX(4px);
-}
-
-/* ===== Button Press Effect ===== */
+/* Button Press Scale */
 button:active:not(:disabled) {
-    transform: scale(0.97);
+    transform: scale(0.96) !important;
 }
 
-/* ===== Modal Glassmorphism ===== */
-.modal-overlay.active {
-    backdrop-filter: blur(4px);
-    -webkit-backdrop-filter: blur(4px);
+/* Hover Lift Effect */
+.room-item:hover,
+.user-item:hover,
+.link-preview:hover {
+    transform: translateY(-2px);
+    background: var(--surface-elevated);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
-.profile-modal {
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+/* ===== 5. Input Focus Glow ===== */
+input:focus,
+textarea:focus {
+    outline: none;
+    border-color: var(--primary) !important;
+    box-shadow: 0 0 0 4px rgba(var(--primary-rgb), 0.15);
+    transform: translateY(-1px);
 }
 
-/* ===== Link Preview Shimmer Loading ===== */
+/* ===== 6. Message Bubble Polish ===== */
+.message-bubble {
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.message:hover .message-bubble {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+/* Sent Bubble Gradient Animation */
+.message.sent .message-bubble {
+    background-size: 200% 200%;
+    animation: gradientShift 5s ease infinite;
+}
+
+@keyframes gradientShift {
+    0% {
+        background-position: 0% 50%;
+    }
+
+    50% {
+        background-position: 100% 50%;
+    }
+
+    100% {
+        background-position: 0% 50%;
+    }
+}
+
+/* ===== 7. Image Loading Shimmer ===== */
 @keyframes shimmer {
     0% {
         background-position: -200% 0;
@@ -111,45 +135,57 @@ button:active:not(:disabled) {
 }
 
 .preview-image.loading {
-    background: linear-gradient(90deg, var(--bg-secondary) 25%, var(--surface) 50%, var(--bg-secondary) 75%);
+    background: linear-gradient(90deg,
+            var(--bg-secondary) 25%,
+            var(--surface) 50%,
+            var(--bg-secondary) 75%);
     background-size: 200% 100%;
-    animation: shimmer 1.5s infinite;
+    animation: shimmer 1.5s infinite linear;
 }
 
-/* ===== Input Focus Glow ===== */
-input:focus,
-textarea:focus {
-    outline: none;
-    box-shadow: 0 0 0 2px rgba(var(--primary-rgb), 0.3);
+/* ===== 8. Empty State Polish ===== */
+.empty-state {
+    animation: fadeUp 0.6s ease-out;
 }
 
-/* ===== Message Bubble Hover ===== */
-.message-bubble {
-    transition: box-shadow 0.15s ease;
+.empty-state-icon {
+    font-size: 4rem;
+    margin-bottom: 20px;
+    background: linear-gradient(135deg, var(--primary), var(--text-secondary));
+    -webkit-background-clip: text;
+    background-clip: text;
+    /* -webkit-text-fill-color: transparent; Removed for better visibility on dark modes */
+    opacity: 0.8;
+    filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.2));
 }
 
-.message:hover .message-bubble {
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-}
-
-/* ===== Send Button Pulse ===== */
-#sendBtn:not(:disabled) {
-    animation: pulse 2s infinite;
-}
-
-@keyframes pulse {
-
-    0%,
-    100% {
-        box-shadow: 0 0 0 0 rgba(var(--primary-rgb), 0.4);
+@keyframes fadeUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
     }
 
-    50% {
-        box-shadow: 0 0 0 6px rgba(var(--primary-rgb), 0);
+    to {
+        opacity: 1;
+        transform: translateY(0);
     }
 }
 
-/* ===== Smooth Scrollbar ===== */
-* {
-    scroll-behavior: smooth;
+/* ===== 9. Smooth Context Menu / Dropdowns ===== */
+.emoji-picker,
+.reaction-picker {
+    animation: menuScale 0.2s cubic-bezier(0.18, 0.89, 0.32, 1.28);
+    transform-origin: bottom center;
+}
+
+@keyframes menuScale {
+    from {
+        opacity: 0;
+        transform: scale(0.8) translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
 }

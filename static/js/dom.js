@@ -21,7 +21,6 @@ const DOM = {
     joinRoomBtn: null,
     authMsg: null,
     cmdSuggest: null,
-    themeToggle: null,
     typingIndicator: null,
     typingText: null,
     menuBtn: null,
@@ -68,7 +67,6 @@ function initDOM() {
     DOM.joinRoomBtn = $('joinRoomBtn');
     DOM.authMsg = $('authMsg');
     DOM.cmdSuggest = $('cmdSuggest');
-    DOM.themeToggle = $('themeToggle');
     DOM.typingIndicator = $('typingIndicator');
     DOM.typingText = $('typingText');
     DOM.menuBtn = $('menuBtn');

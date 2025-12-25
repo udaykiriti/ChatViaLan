@@ -6,13 +6,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>LAN Chat</title>
 
-  <script>
-    // Anti-flash theme script
-    (function () {
-      const theme = localStorage.getItem('theme') || 'dark';
-      document.documentElement.setAttribute('data-theme', theme);
-    })();
-  </script>
 
   <!-- Prism.js for syntax highlighting -->
   <link rel="stylesheet" href="libs/prism/prism-tomorrow.min.css">
@@ -23,8 +16,8 @@
   <link rel="stylesheet" href="css/chat.css?v=5">
   <link rel="stylesheet" href="css/messages.css?v=5">
   <link rel="stylesheet" href="css/polish.css?v=1">
-  <link rel="stylesheet" href="css/classic.css">
-  <link rel="stylesheet" href="css/mobile-fix.css?v=1">
+  <link rel="stylesheet" href="css/msn.css?v=1">
+  <link rel="stylesheet" href="css/responsive.css?v=2">
 
   <link rel="icon" type="image/svg+xml" href="favicon.svg">
   <link rel="manifest" href="manifest.json">
@@ -44,7 +37,6 @@
       <div class="sidebar-header">
         <h2>Chats</h2>
         <div style="display:flex;gap:8px;">
-          <button class="theme-toggle" id="themeToggle">🌙</button>
           <button class="close-sidebar" id="closeSidebar">✕</button>
         </div>
       </div>
@@ -100,7 +92,10 @@
 
       <!-- Markdown Help -->
       <div class="sidebar-section shortcuts-section">
-        <div class="section-title">Formatting</div>
+        <div class="section-title" style="display:flex;justify-content:space-between;align-items:center;">
+          Formatting
+          <button id="mdHelpBtn" style="background:none;border:none;cursor:pointer;opacity:0.7;">❓</button>
+        </div>
         <div class="shortcuts-list">
           <span><code>**bold**</code></span>
           <span><code>*italic*</code></span>
@@ -220,6 +215,7 @@
   <script src="libs/prism/components/prism-java.min.js"></script>
   <script src="libs/prism/components/prism-c.min.js"></script>
   <script src="libs/prism/components/prism-cpp.min.js"></script>
+  <!-- End Prism -->
 
   <!-- Modular JavaScript -->
   <script src="js/config.js?v=5"></script>
