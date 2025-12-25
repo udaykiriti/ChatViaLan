@@ -43,6 +43,9 @@ const DOM = {
     modalMessageBtn: null,
     modalMentionBtn: null,
     modalCloseBtn: null,
+    mdHelpBtn: null,
+    mdHelpOverlay: null,
+    mdHelpCloseBtn: null,
 };
 
 function initDOM() {
@@ -87,6 +90,9 @@ function initDOM() {
     DOM.modalMessageBtn = $('modalMessageBtn');
     DOM.modalMentionBtn = $('modalMentionBtn');
     DOM.modalCloseBtn = $('modalCloseBtn');
+    DOM.mdHelpBtn = $('mdHelpBtn');
+    DOM.mdHelpOverlay = $('mdHelpOverlay');
+    DOM.mdHelpCloseBtn = $('mdHelpCloseBtn');
 }
 
 // ===== Mobile Sidebar Toggle =====

@@ -380,6 +380,23 @@ function initEventListeners() {
     DOM.profileModalOverlay.onclick = (e) => {
         if (e.target === DOM.profileModalOverlay) hideProfileModal();
     };
+
+    // Markdown Help Modal Events
+    if (DOM.mdHelpBtn) {
+        DOM.mdHelpBtn.onclick = () => {
+            DOM.mdHelpOverlay.classList.add('active');
+        };
+    }
+    if (DOM.mdHelpCloseBtn) {
+        DOM.mdHelpCloseBtn.onclick = () => {
+            DOM.mdHelpOverlay.classList.remove('active');
+        };
+    }
+    if (DOM.mdHelpOverlay) {
+        DOM.mdHelpOverlay.onclick = (e) => {
+            if (e.target === DOM.mdHelpOverlay) DOM.mdHelpOverlay.classList.remove('active');
+        };
+    }
 }
 
 // ===== Profile Modal Functions =====

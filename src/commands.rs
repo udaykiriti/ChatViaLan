@@ -192,6 +192,27 @@ pub async fn handle_cmd_with_rooms(
                 send_to_client(clients, client_id, "Usage: /kick <user>").await;
             }
         }
+        "/stats" => {
+            let total_clients = clients.len();
+            let total_rooms = histories.read().await.len();
+            let total_messages: usize = histories.read().await.values().map(|v| v.len()).sum();
+            
+            // Memory Usage (Approximate using /proc/self/statm on Linux)
+            let mem_usage = if let Ok(content) = std::fs::read_to_string("/proc/self/statm") {
+                let parts: Vec<&str> = content.split_whitespace().collect();
+                if let Some(pages) = parts.get(1) {
+                    if let Ok(pages_cnt) = pages.parse::<usize>() {
+                         format!("{:.2} MB", (pages_cnt * 4) as f64 / 1024.0) // Assuming 4KB pages
+                    } else { "N/A".to_string() }
+                } else { "N/A".to_string() }
+            } else { "N/A".to_string() };
+
+            let stats_msg = format!(
+                "Server Stats:\nClients: {}\nRooms: {}\nMessages: {}\nMem: {}",
+                total_clients, total_rooms, total_messages, mem_usage
+            );
+            send_to_client(clients, client_id, &stats_msg).await;
+        }
         "/help" => {
             let help_text = r#"Available commands:
   /name <name>     - Set your display name
@@ -206,6 +227,7 @@ pub async fn handle_cmd_with_rooms(
   /who             - Show users with status
   /kick <user>     - Kick a user (logged-in only)
   /history         - Reload chat history
+  /stats           - Show server metrics
   /help            - Show this help"#;
             send_to_client(clients, client_id, help_text).await;
         }

@@ -49,11 +49,13 @@ async fn main() -> anyhow::Result<()> {
     // Load history from disk
     crate::room::load_history(&histories).await;
 
-    // Ensure default "lobby" room exists
+    // Ensure persistent rooms exist
     {
         let mut h = histories.write().await;
-        h.entry("lobby".to_string())
-            .or_insert_with(|| VecDeque::with_capacity(200));
+        for room in &["lobby", "general", "random", "tech", "music"] {
+            h.entry(room.to_string())
+                .or_insert_with(|| VecDeque::with_capacity(200));
+        }
     }
 
     // Warp filters for shared state

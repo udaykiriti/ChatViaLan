@@ -177,6 +177,26 @@
     </div>
   </div>
 
+  <!-- Markdown Help Modal -->
+  <div class="modal-overlay" id="mdHelpOverlay">
+    <div class="profile-modal" id="mdHelpModal" style="width: 400px;">
+      <div class="profile-header">
+        <h2>Markdown Guide</h2>
+      </div>
+      <div class="profile-actions" style="text-align: left; font-size: 0.9rem;">
+        <p><strong>**Bold**</strong> &rarr; <b>Bold</b></p>
+        <p><em>*Italic*</em> &rarr; <i>Italic</i></p>
+        <p><code>`Code`</code> &rarr; <code style="background:#333;padding:2px 4px;border-radius:4px;">Code</code></p>
+        <p><code>&gt; Quote</code> &rarr; <span
+            style="border-left:3px solid #666;padding-left:6px;display:inline-block;">Quote</span></p>
+        <p><code>[Link](url)</code> &rarr; <a href="#" style="color:var(--primary);">Link</a></p>
+        <p><code>![Image](url)</code> &rarr; Image</p>
+        <button class="close-btn" id="mdHelpCloseBtn"
+          style="margin-top: 10px; width: 100%; border: 1px solid var(--border);">Close</button>
+      </div>
+    </div>
+  </div>
+
   <ul class="cmd-suggest" id="cmdSuggest"></ul>
 
   <!-- Marked.js for Markdown parsing -->
