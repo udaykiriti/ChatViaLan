@@ -6,7 +6,7 @@ use uuid::Uuid;
 use tracing::{info, warn};
 use std::time::Instant;
 
-use crate::types::{Client, Clients, Histories, Incoming, Outgoing, Tx, Users};
+use crate::types::{Client, Clients, Histories, PrivateHistories, Incoming, Outgoing, Tx, Users};
 use crate::auth::{register_user, verify_login};
 use crate::room::{send_system_to_room, send_history_to_client_room, send_user_list_to_room};
 use crate::commands::{handle_cmd_with_rooms, handle_message_with_rooms};
@@ -20,6 +20,7 @@ pub async fn client_connected(
     remote: Option<std::net::SocketAddr>,
     clients: Clients,
     histories: Histories,
+    private_histories: PrivateHistories,
     users: Users,
 ) {
     let addr = remote
@@ -191,7 +192,7 @@ pub async fn client_connected(
                     if let Ok(text) = msg.to_str() {
                         match serde_json::from_str::<Incoming>(text) {
                             Ok(Incoming::Cmd { cmd }) => {
-                                handle_cmd_with_rooms(&client_id, &cmd, &clients, &histories, &users).await;
+                                handle_cmd_with_rooms(&client_id, &cmd, &clients, &histories, &private_histories, &users).await;
                             }
                             Ok(Incoming::Msg { text }) => {
                                 if check_rate_limit(&clients, &client_id).await {

@@ -28,7 +28,7 @@ use dashmap::DashMap;
 use warp::Filter;
 use tracing::{info, warn};
 
-use crate::types::{Clients, Histories, Users};
+use crate::types::{Clients, Histories, PrivateHistories, Users};
 use crate::auth::load_users;
 use crate::client::client_connected;
 use crate::upload::handle_upload;
@@ -45,6 +45,7 @@ async fn main() -> anyhow::Result<()> {
 
     let clients: Clients = Arc::new(DashMap::new());
     let histories: Histories = Arc::new(RwLock::new(HashMap::new()));
+    let private_histories: PrivateHistories = Arc::new(RwLock::new(HashMap::new()));
 
     // Load history from disk
     crate::room::load_history(&histories).await;
@@ -63,6 +64,8 @@ async fn main() -> anyhow::Result<()> {
     let clients_filter = warp::any().map(move || clients_c.clone());
     let histories_c = histories.clone();
     let histories_filter = warp::any().map(move || histories_c.clone());
+    let private_histories_c = private_histories.clone();
+    let private_histories_filter = warp::any().map(move || private_histories_c.clone());
     let users_c = users.clone();
     let users_filter = warp::any().map(move || users_c.clone());
 
@@ -72,9 +75,10 @@ async fn main() -> anyhow::Result<()> {
         .and(warp::addr::remote())
         .and(clients_filter)
         .and(histories_filter)
+        .and(private_histories_filter)
         .and(users_filter)
-        .map(|ws: warp::ws::Ws, remote, clients, histories, users| {
-            ws.on_upgrade(move |socket| client_connected(socket, remote, clients, histories, users))
+        .map(|ws: warp::ws::Ws, remote, clients, histories, private_histories, users| {
+            ws.on_upgrade(move |socket| client_connected(socket, remote, clients, histories, private_histories, users))
         });
 
     // Static file routes

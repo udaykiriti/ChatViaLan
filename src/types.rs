@@ -16,6 +16,9 @@ pub type Clients = Arc<DashMap<String, Client>>;
 /// Per-room message histories: room_name -> VecDeque<HistoryItem>
 pub type Histories = Arc<RwLock<HashMap<String, VecDeque<HistoryItem>>>>;
 
+/// Private message histories: key (sorted usernames) -> VecDeque<HistoryItem>
+pub type PrivateHistories = Arc<RwLock<HashMap<String, VecDeque<HistoryItem>>>>;
+
 /// Registered users: username -> password_hash
 pub type Users = Arc<DashMap<String, String>>;
 

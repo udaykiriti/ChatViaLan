@@ -18,6 +18,8 @@ Messenger-style UI with real-time features.
 ### Advanced
 - **Online Status & Idle Tracking** (Active/Idle indicators)
 - **Admin Moderation** (`/kick` command)
+- **Secure Private Messaging** (Stored separately from rooms)
+- **Profanity Filter** (Auto-censors banned words)
 - **Pinned Messages** with "click to jump" functionality
 - **PWA Support** (Installable on mobile/desktop)
 - Message reactions (👍 ❤️ 😂 😮 😢 🎉)
@@ -27,6 +29,7 @@ Messenger-style UI with real-time features.
 - Sound notifications + unread count
 - Dark/light theme (persistent preference)
 - Rate limiting (5 msg / 10 sec)
+- **Markdown Support** (with '?' Cheat Sheet)
 
 ### UI/UX
 - Messenger-style bubble layout
@@ -79,6 +82,7 @@ cargo run --release
 | `/msg <user> <text>` | Private message |
 | `/join <room>` | Join room |
 | `/kick <user>` | Kick a user (Admin only) |
+| `/stats` | Show server metrics (Mem, Clients) |
 | `/rooms` | List rooms |
 | `/leave` | Return to lobby |
 | `/who` | List users with status |

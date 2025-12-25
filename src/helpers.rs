@@ -1,7 +1,11 @@
 //! Helper functions for client operations.
 
 use std::time::SystemTime;
+use regex::Regex;
+use std::sync::OnceLock;
 use crate::types::{Clients, Tx};
+
+static PROFANITY_REGEX: OnceLock<Regex> = OnceLock::new();
 
 /// Get client name by ID.
 pub async fn client_name_by_id(clients: &Clients, id: &str) -> String {
@@ -15,10 +19,14 @@ pub async fn client_tx_by_id(clients: &Clients, id: &str) -> Option<Tx> {
 
 /// Get current Unix timestamp.
 pub fn now_ts() -> u64 {
-    SystemTime::now()
-        .duration_since(SystemTime::UNIX_EPOCH)
-        .map(|d| d.as_secs())
-        .unwrap_or(0)
+    SystemTime::now().duration_since(SystemTime::UNIX_EPOCH).unwrap().as_secs()
+}
+
+pub fn censor_profanity(text: &str) -> String {
+    let re = PROFANITY_REGEX.get_or_init(|| {
+        Regex::new(r"(?i)\b(badword1|badword2|badword3)\b").unwrap() // Placeholder list
+    });
+    re.replace_all(text, "****").to_string()
 }
 
 /// Make a username unique among currently connected clients.

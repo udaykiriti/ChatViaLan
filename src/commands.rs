@@ -13,6 +13,7 @@ pub async fn handle_cmd_with_rooms(
     cmd_line: &str,
     clients: &Clients,
     histories: &Histories,
+    private_histories: &crate::types::PrivateHistories,
     users: &Users,
 ) {
     let mut parts = cmd_line.splitn(3, ' ');
@@ -138,13 +139,18 @@ pub async fn handle_cmd_with_rooms(
                     if let Ok(s) = serde_json::to_string(&item) {
                         let _ = tx.send(warp::ws::Message::text(s));
                     }
-                    // Store in history
-                    let room = get_client_room(clients, client_id).await;
-                    let mut locked_h = histories.write().await;
-                    let q = locked_h.entry(room).or_insert_with(|| VecDeque::with_capacity(200));
+                    
+                    // Securely store in PrivateHistories
+                    // Key: "alfred,batman" (sorted)
+                    let mut participants = vec![from.clone(), target_name.clone()];
+                    participants.sort();
+                    let key = participants.join(",");
+                    
+                    let mut locked_ph = private_histories.write().await;
+                    let q = locked_ph.entry(key).or_insert_with(|| VecDeque::with_capacity(200));
                     q.push_back(HistoryItem { 
                         id: msg_id,
-                        from: format!("(private) {} -> {}", from, target.trim()), 
+                        from: from, 
                         text: text.to_string(), 
                         ts: now_ts(),
                         reactions: HashMap::new(),
@@ -258,10 +264,11 @@ pub async fn handle_message_with_rooms(
 ) {
     let from = client_name_by_id(clients, client_id).await;
     let room = get_client_room(clients, client_id).await;
+    let filtered_text = crate::helpers::censor_profanity(text);
     let item = HistoryItem {
         id: generate_msg_id(),
         from,
-        text: text.to_string(),
+        text: filtered_text,
         ts: now_ts(),
         reactions: HashMap::new(),
         edited: false,
