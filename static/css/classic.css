@@ -1,0 +1,415 @@
+/* ===== Classic Theme - Refined & Clean ===== */
+
+/* ===== Refined Color Palette ===== */
+:root {
+    /* Softer Blue Theme */
+    --classic-blue: #1a4d8c;
+    --classic-blue-light: #4a7fc7;
+    --classic-blue-dark: #0d3a6e;
+
+    /* Refined Neutrals */
+    --classic-cream: #faf9f7;
+    --classic-paper: #f5f4f2;
+    --classic-silver: #e8e6e2;
+    --classic-gray: #6b6b6b;
+    --classic-dark: #2c2c2c;
+
+    /* Accent */
+    --classic-accent: #2563a8;
+    --classic-highlight: #e3f0ff;
+
+    /* Borders */
+    --classic-border: #d0cdc8;
+    --classic-border-dark: #b5b0a8;
+}
+
+/* ===== Clean Typography ===== */
+body {
+    font-family: 'Georgia', 'Cambria', 'Times New Roman', serif !important;
+    background: var(--classic-cream) !important;
+    color: var(--classic-dark) !important;
+    line-height: 1.6 !important;
+}
+
+h1,
+h2,
+h3,
+.section-title,
+.sidebar-header h2 {
+    font-family: 'Georgia', serif !important;
+    font-weight: 600 !important;
+    letter-spacing: 0.3px;
+}
+
+/* ===== Refined Header ===== */
+.chat-header,
+.sidebar-header {
+    background: linear-gradient(180deg,
+            var(--classic-blue-light) 0%,
+            var(--classic-blue) 100%) !important;
+    color: white !important;
+    border-bottom: 1px solid var(--classic-blue-dark) !important;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important;
+}
+
+.sidebar-header h2,
+.header-center {
+    color: white !important;
+    font-weight: 600 !important;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+/* ===== Clean Buttons ===== */
+button,
+.auth-tab,
+#sendBtn,
+#setNameBtn,
+#joinRoomBtn,
+#uploadBtn {
+    background: linear-gradient(180deg, #ffffff 0%, var(--classic-paper) 100%) !important;
+    color: var(--classic-dark) !important;
+    border: 1px solid var(--classic-border-dark) !important;
+    border-radius: 4px !important;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08) !important;
+    font-family: 'Segoe UI', 'Tahoma', sans-serif !important;
+    font-size: 13px !important;
+    padding: 6px 14px !important;
+    cursor: pointer;
+    transition: all 0.15s ease !important;
+}
+
+button:hover:not(:disabled) {
+    background: linear-gradient(180deg, #ffffff 0%, #f0efed 100%) !important;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.12) !important;
+}
+
+button:active:not(:disabled) {
+    background: var(--classic-silver) !important;
+    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.1) !important;
+}
+
+/* Primary Button (Send) */
+#sendBtn:not(:disabled) {
+    background: linear-gradient(180deg, var(--classic-blue-light) 0%, var(--classic-blue) 100%) !important;
+    color: white !important;
+    font-weight: 600 !important;
+    border-color: var(--classic-blue-dark) !important;
+    animation: none !important;
+}
+
+#sendBtn:not(:disabled):hover {
+    background: linear-gradient(180deg, #5a8fd7 0%, #2a5d9c 100%) !important;
+}
+
+/* ===== Clean Sidebar ===== */
+.sidebar {
+    background: var(--classic-paper) !important;
+    border-right: 1px solid var(--classic-border) !important;
+}
+
+.sidebar-section {
+    background: var(--classic-cream) !important;
+    border: 1px solid var(--classic-border) !important;
+    border-radius: 6px !important;
+    margin: 10px !important;
+    padding: 12px !important;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04) !important;
+}
+
+.section-title {
+    color: var(--classic-blue) !important;
+    font-size: 11px !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.8px !important;
+    border-bottom: 1px solid var(--classic-border) !important;
+    padding-bottom: 6px !important;
+    margin-bottom: 10px !important;
+}
+
+/* ===== Clean Input Fields ===== */
+input,
+textarea {
+    background: white !important;
+    border: 1px solid var(--classic-border-dark) !important;
+    border-radius: 4px !important;
+    font-family: 'Segoe UI', sans-serif !important;
+    font-size: 13px !important;
+    color: var(--classic-dark) !important;
+    padding: 8px 10px !important;
+    transition: border-color 0.15s ease !important;
+}
+
+input:focus,
+textarea:focus {
+    border-color: var(--classic-accent) !important;
+    outline: none !important;
+    box-shadow: 0 0 0 3px var(--classic-highlight) !important;
+}
+
+/* ===== Clean Messages Area ===== */
+.messages {
+    background: white !important;
+    border: 1px solid var(--classic-border) !important;
+    border-radius: 0 !important;
+    padding: 8px 0 !important;
+}
+
+.message {
+    max-width: 100% !important;
+    border-bottom: 1px solid var(--classic-silver) !important;
+    padding: 12px 16px !important;
+    margin: 0 !important;
+    border-radius: 0 !important;
+    animation: none !important;
+    opacity: 1 !important;
+    transition: background 0.15s ease !important;
+}
+
+/* Subtle Alternating Rows */
+.message:nth-child(odd) {
+    background: white !important;
+}
+
+.message:nth-child(even) {
+    background: var(--classic-cream) !important;
+}
+
+.message:hover {
+    background: var(--classic-highlight) !important;
+}
+
+.message.sent,
+.message.received {
+    align-self: stretch !important;
+}
+
+/* ===== Clean Message Content ===== */
+.message-bubble {
+    background: transparent !important;
+    color: var(--classic-dark) !important;
+    border-radius: 0 !important;
+    padding: 0 !important;
+    font-family: 'Georgia', serif !important;
+    font-size: 14px !important;
+    line-height: 1.7 !important;
+}
+
+.message.sent .message-bubble,
+.message.received .message-bubble {
+    background: transparent !important;
+    color: var(--classic-dark) !important;
+}
+
+/* ===== Refined Header Info ===== */
+.message-header {
+    margin-bottom: 6px !important;
+    display: flex !important;
+    align-items: baseline !important;
+    gap: 10px !important;
+}
+
+.message-author {
+    font-weight: 700 !important;
+    color: var(--classic-blue) !important;
+    font-size: 13px !important;
+    font-family: 'Segoe UI', sans-serif !important;
+}
+
+.message-time {
+    font-size: 11px !important;
+    color: var(--classic-gray) !important;
+    font-family: 'Segoe UI', sans-serif !important;
+}
+
+/* ===== Clean Reactions ===== */
+.reaction-bar {
+    margin-top: 8px !important;
+    padding-top: 8px !important;
+    border-top: 1px solid var(--classic-silver) !important;
+}
+
+.reaction-btn {
+    background: var(--classic-cream) !important;
+    border: 1px solid var(--classic-border) !important;
+    border-radius: 12px !important;
+    font-size: 12px !important;
+    color: var(--classic-dark) !important;
+    padding: 3px 10px !important;
+    transition: all 0.15s ease !important;
+}
+
+.reaction-btn:hover {
+    background: var(--classic-highlight) !important;
+    border-color: var(--classic-accent) !important;
+}
+
+.reaction-btn.active {
+    background: var(--classic-accent) !important;
+    color: white !important;
+    border-color: var(--classic-blue-dark) !important;
+}
+
+.add-reaction-btn {
+    border-radius: 50% !important;
+    border: 1px dashed var(--classic-border-dark) !important;
+}
+
+/* ===== Clean Modals ===== */
+.modal-overlay.active {
+    backdrop-filter: blur(2px) !important;
+    background: rgba(0, 0, 0, 0.4) !important;
+}
+
+.profile-modal {
+    background: var(--classic-cream) !important;
+    border: 1px solid var(--classic-border) !important;
+    border-radius: 8px !important;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15) !important;
+}
+
+.profile-header {
+    background: linear-gradient(180deg, var(--classic-blue-light) 0%, var(--classic-blue) 100%) !important;
+    color: white !important;
+    padding: 16px !important;
+    border-radius: 8px 8px 0 0 !important;
+}
+
+/* ===== Clean Room/User List ===== */
+.room-item,
+.user-item {
+    background: white !important;
+    border: 1px solid var(--classic-border) !important;
+    border-radius: 4px !important;
+    margin-bottom: 4px !important;
+    transition: all 0.15s ease !important;
+}
+
+.room-item:hover,
+.user-item:hover {
+    background: var(--classic-highlight) !important;
+    border-color: var(--classic-accent) !important;
+    transform: none !important;
+}
+
+.room-item.active {
+    background: var(--classic-accent) !important;
+    color: white !important;
+    border-color: var(--classic-blue-dark) !important;
+}
+
+/* ===== Clean Scrollbars ===== */
+::-webkit-scrollbar {
+    width: 10px !important;
+    background: var(--classic-paper) !important;
+}
+
+::-webkit-scrollbar-track {
+    background: var(--classic-paper) !important;
+    border-radius: 5px !important;
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--classic-border-dark) !important;
+    border-radius: 5px !important;
+    border: 2px solid var(--classic-paper) !important;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--classic-gray) !important;
+}
+
+/* ===== System Messages ===== */
+.message.system .message-bubble {
+    font-style: italic !important;
+    color: var(--classic-gray) !important;
+    text-align: center !important;
+    font-size: 12px !important;
+    padding: 8px 0 !important;
+}
+
+.message.system {
+    border-bottom: none !important;
+    background: transparent !important;
+}
+
+/* ===== Empty State ===== */
+.empty-state {
+    font-family: 'Georgia', serif !important;
+    border: 1px solid var(--classic-border) !important;
+    background: var(--classic-cream) !important;
+    border-radius: 8px !important;
+    padding: 32px !important;
+    margin: 24px !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05) !important;
+}
+
+.empty-state-title {
+    font-weight: 600 !important;
+    color: var(--classic-blue) !important;
+}
+
+/* ===== Link Preview ===== */
+.link-preview {
+    border: 1px solid var(--classic-border) !important;
+    border-radius: 6px !important;
+    background: var(--classic-cream) !important;
+    overflow: hidden !important;
+}
+
+.preview-title {
+    font-family: 'Georgia', serif !important;
+    font-weight: 600 !important;
+    color: var(--classic-blue) !important;
+}
+
+.preview-desc {
+    font-family: 'Segoe UI', sans-serif !important;
+    color: var(--classic-gray) !important;
+}
+
+/* ===== Chat Input Area ===== */
+.chat-input {
+    background: var(--classic-paper) !important;
+    border-top: 1px solid var(--classic-border) !important;
+}
+
+/* ===== Emoji Picker ===== */
+.emoji-picker {
+    background: var(--classic-cream) !important;
+    border: 1px solid var(--classic-border) !important;
+    border-radius: 8px !important;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12) !important;
+}
+
+.emoji-category-title {
+    background: var(--classic-cream) !important;
+    color: var(--classic-blue) !important;
+    font-family: 'Segoe UI', sans-serif !important;
+}
+
+/* ===== Reaction Picker ===== */
+.reaction-picker {
+    background: var(--classic-cream) !important;
+    border: 1px solid var(--classic-border) !important;
+    border-radius: 8px !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12) !important;
+}
+
+/* ===== Auth Section ===== */
+.auth-section {
+    background: var(--classic-cream) !important;
+}
+
+.auth-tab {
+    border-radius: 4px 4px 0 0 !important;
+}
+
+.auth-tab.active {
+    background: var(--classic-accent) !important;
+    color: white !important;
+}
+
+/* ===== Smooth but Subtle Transitions ===== */
+* {
+    transition-duration: 0.15s !important;
+}

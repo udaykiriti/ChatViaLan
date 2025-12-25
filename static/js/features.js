@@ -70,3 +70,27 @@ function handleTypingIndicator(users) {
             : `${others.length} people are typing`;
     }
 }
+
+// ===== Mobile Menu =====
+
+function initMobileMenu() {
+    if (DOM.menuBtn) {
+        DOM.menuBtn.onclick = () => {
+            DOM.sidebar.classList.add('active');
+            DOM.sidebarOverlay.classList.add('active');
+        };
+    }
+
+    if (DOM.closeSidebar) {
+        DOM.closeSidebar.onclick = closeSidebar;
+    }
+
+    if (DOM.sidebarOverlay) {
+        DOM.sidebarOverlay.onclick = closeSidebar;
+    }
+}
+
+function closeSidebar() {
+    if (DOM.sidebar) DOM.sidebar.classList.remove('active');
+    if (DOM.sidebarOverlay) DOM.sidebarOverlay.classList.remove('active');
+}

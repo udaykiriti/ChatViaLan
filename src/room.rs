@@ -1,7 +1,6 @@
 //! Room management: broadcasting, history, and room switching.
 
 use std::collections::{HashMap, VecDeque};
-use std::fs;
 use uuid::Uuid;
 use tracing::{info, error};
 use crate::types::{Clients, Histories, HistoryItem, Outgoing, Tx};
@@ -356,7 +355,7 @@ pub async fn save_history(histories: &Histories) {
     let h = histories.read().await;
     match serde_json::to_string(&*h) {
         Ok(json) => {
-            if let Err(e) = fs::write("history.json", json) {
+            if let Err(e) = tokio::fs::write("history.json", json).await {
                 error!("Failed to save history.json: {}", e);
             } else {
                 info!("History saved to history.json");
@@ -367,7 +366,7 @@ pub async fn save_history(histories: &Histories) {
 }
 
 pub async fn load_history(histories: &Histories) {
-    if let Ok(json) = fs::read_to_string("history.json") {
+    if let Ok(json) = tokio::fs::read_to_string("history.json").await {
         match serde_json::from_str::<HashMap<String, VecDeque<HistoryItem>>>(&json) {
             Ok(loaded) => {
                 let mut h = histories.write().await;

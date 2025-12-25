@@ -331,11 +331,20 @@ function initEventListeners() {
     // Close suggestions / emoji picker on outside click
     document.onclick = (e) => {
         if (!DOM.cmdSuggest.contains(e.target) && e.target !== DOM.textInput) hideCmdSuggest();
+
         if (!e.target.closest('.add-reaction-btn') && !e.target.closest('.reaction-picker')) {
             document.querySelectorAll('.reaction-picker').forEach(p => p.remove());
         }
+
         if (!e.target.closest('.emoji-picker') && !e.target.closest('.emoji-btn')) {
             closeEmojiPicker();
+        }
+
+        // Handle Reaction Picker Clicks (Global because it's in body)
+        const pickerEmoji = e.target.closest('.picker-emoji');
+        if (pickerEmoji) {
+            sendReaction(pickerEmoji.dataset.msgId, pickerEmoji.dataset.emoji);
+            document.querySelectorAll('.reaction-picker').forEach(p => p.remove());
         }
     };
 
@@ -346,6 +355,28 @@ function initEventListeners() {
             DOM.textInput.focus();
         }
     };
+
+    // Global click delegations for dynamic content (Search, Pins, Links)
+    document.addEventListener('click', (e) => {
+        const searchItem = e.target.closest('.search-item');
+        if (searchItem) {
+            jumpToMessage(searchItem.dataset.msgId);
+            hideSearchResults();
+        }
+
+        const pinnedItem = e.target.closest('.pinned-item');
+        if (pinnedItem) {
+            jumpToMessage(pinnedItem.dataset.msgId);
+        }
+
+        const replyPreview = e.target.closest('.reply-preview');
+        if (replyPreview && replyPreview.onclick) {
+            // Already handled by inline onclick, but for robustness:
+            // jumpToMessage is global, so inline works. 
+            // We leave inline alone or move it here. 
+            // Current impl uses inline, so no action needed for Reply Preview.
+        }
+    });
 
     // Message area clicks (reactions, edit, delete)
     DOM.messagesEl.onclick = (e) => {
@@ -369,12 +400,6 @@ function initEventListeners() {
             return;
         }
 
-        const pickerEmoji = e.target.closest('.picker-emoji');
-        if (pickerEmoji) {
-            sendReaction(pickerEmoji.dataset.msgId, pickerEmoji.dataset.emoji);
-            document.querySelectorAll('.reaction-picker').forEach(p => p.remove());
-            return;
-        }
 
         const editBtn = e.target.closest('.edit-btn');
         if (editBtn) {

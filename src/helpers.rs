@@ -5,7 +5,7 @@ use regex::Regex;
 use std::sync::OnceLock;
 use crate::types::{Clients, Tx};
 
-static PROFANITY_REGEX: OnceLock<Regex> = OnceLock::new();
+
 
 /// Get client name by ID.
 pub async fn client_name_by_id(clients: &Clients, id: &str) -> String {
@@ -23,7 +23,8 @@ pub fn now_ts() -> u64 {
 }
 
 pub fn censor_profanity(text: &str) -> String {
-    let re = PROFANITY_REGEX.get_or_init(|| {
+    static PROFANITY_RE: OnceLock<Regex> = OnceLock::new();
+    let re = PROFANITY_RE.get_or_init(|| {
         Regex::new(r"(?i)\b(badword1|badword2|badword3)\b").unwrap() // Placeholder list
     });
     re.replace_all(text, "****").to_string()
@@ -41,4 +42,42 @@ pub async fn make_unique_name(clients: &Clients, desired: &str) -> String {
         candidate = format!("{}-{}", desired, suffix);
         suffix += 1;
     }
+}
+
+/// Fetch URL preview (OG tags)
+pub async fn fetch_preview(url: &str) -> Option<(String, String, String)> {
+    static TITLE_SEL: OnceLock<scraper::Selector> = OnceLock::new();
+    static DESC_SEL: OnceLock<scraper::Selector> = OnceLock::new();
+    static IMAGE_SEL: OnceLock<scraper::Selector> = OnceLock::new();
+    static TITLE_TAG: OnceLock<scraper::Selector> = OnceLock::new();
+
+    let resp = reqwest::get(url).await.ok()?;
+    let html = resp.text().await.ok()?;
+    
+    let document = scraper::Html::parse_document(&html);
+    
+    let title_selector = TITLE_SEL.get_or_init(|| scraper::Selector::parse("meta[property='og:title']").unwrap());
+    let desc_selector = DESC_SEL.get_or_init(|| scraper::Selector::parse("meta[property='og:description']").unwrap());
+    let image_selector = IMAGE_SEL.get_or_init(|| scraper::Selector::parse("meta[property='og:image']").unwrap());
+    let title_tag = TITLE_TAG.get_or_init(|| scraper::Selector::parse("title").unwrap());
+
+    let title = document.select(title_selector).next()
+        .and_then(|e| e.value().attr("content"))
+        .map(|s| s.to_string())
+        .or_else(|| document.select(title_tag).next().map(|e| e.inner_html()))
+        .unwrap_or_default();
+
+    let desc = document.select(desc_selector).next()
+        .and_then(|e| e.value().attr("content"))
+        .map(|s| s.to_string())
+        .unwrap_or_default();
+
+    let image = document.select(image_selector).next()
+        .and_then(|e| e.value().attr("content"))
+        .map(|s| s.to_string())
+        .unwrap_or_default();
+
+    if title.is_empty() && desc.is_empty() { return None; }
+    
+    Some((title, desc, image))
 }

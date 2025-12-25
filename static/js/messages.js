@@ -1,6 +1,7 @@
 // ===== Message Rendering =====
 
 function appendSystem(text) {
+  hideEmptyState(); // Hide empty state when any message arrives
   const div = document.createElement('div');
   div.className = 'message system';
   div.innerHTML = '<div class="message-bubble">' + escapeHtml(text) + '</div>';
@@ -8,7 +9,28 @@ function appendSystem(text) {
   DOM.messagesEl.scrollTop = DOM.messagesEl.scrollHeight;
 }
 
+function showEmptyState() {
+  if (!DOM.messagesEl) return;
+  if (DOM.messagesEl.querySelector('.empty-state')) return;
+  if (DOM.messagesEl.children.length > 0) return;
+
+  DOM.messagesEl.innerHTML = `
+    <div class="empty-state">
+      <div class="empty-state-icon">💬</div>
+      <div class="empty-state-title">No messages yet</div>
+      <div class="empty-state-text">Start the conversation! Send a message or join another room.</div>
+    </div>
+  `;
+}
+
+function hideEmptyState() {
+  if (!DOM.messagesEl) return;
+  const emptyState = DOM.messagesEl.querySelector('.empty-state');
+  if (emptyState) emptyState.remove();
+}
+
 function appendMessage(id, from, text, ts, reactions = {}, edited = false, replyTo = null) {
+  hideEmptyState(); // Hide empty state when messages arrive
   // Store for search
   allMessages.push({ id, from, text, ts });
 
@@ -118,5 +140,43 @@ function jumpToMessage(id) {
     setTimeout(() => el.classList.remove('highlight'), 2000);
   } else {
     appendSystem('Message not found in current view.');
+  }
+}
+
+// Consolidated Link Preview Renderer
+function renderLinkPreview(data) {
+  const { msg_id, title, description, image, url } = data;
+
+  const msgEl = document.querySelector(`.message[data-msg-id="${msg_id}"]`);
+  if (!msgEl) return;
+  if (msgEl.querySelector('.link-preview')) return;
+
+  // Handle protocol-relative URLs
+  let imgUrl = image;
+  if (imgUrl && imgUrl.startsWith('//')) {
+    imgUrl = 'https:' + imgUrl;
+  }
+
+  // Use img tag with onerror handler to hide broken images
+  // We use inline onerror to set display:none if load fails
+  const imgHtml = imgUrl
+    ? `<img src="${escapeHtml(imgUrl)}" class="preview-image" alt="" onerror="this.style.display='none'">`
+    : '';
+
+  const previewHtml = `
+    <a href="${escapeHtml(url)}" target="_blank" class="link-preview">
+      ${imgHtml}
+      <div class="preview-content">
+        <div class="preview-title">${escapeHtml(title || url)}</div>
+        <div class="preview-desc">${escapeHtml(description)}</div>
+        <div class="preview-domain">${escapeHtml(new URL(url).hostname)}</div>
+      </div>
+    </a>
+  `;
+
+  const bubble = msgEl.querySelector('.message-bubble');
+  if (bubble) {
+    bubble.insertAdjacentHTML('afterend', previewHtml);
+    if (DOM.messagesEl) DOM.messagesEl.scrollTop = DOM.messagesEl.scrollHeight;
   }
 }

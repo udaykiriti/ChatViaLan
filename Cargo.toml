@@ -22,4 +22,6 @@ dashmap = "5.5"
 mdns-sd = "0.17.1"
 local-ip-address = "0.6.8"
 qr2term = "0.3.3"
+reqwest = "0.12.28"
+scraper = "0.25.0"
 

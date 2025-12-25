@@ -274,7 +274,40 @@ pub async fn handle_message_with_rooms(
         edited: false,
         deleted: false,
     };
-    broadcast_to_room_and_store(clients, histories, &room, item).await;
+    broadcast_to_room_and_store(clients, histories, &room, item.clone()).await;
+    
+    // Check for URLs and fetch previews
+    static URL_RE: std::sync::OnceLock<regex::Regex> = std::sync::OnceLock::new();
+    let url_regex = URL_RE.get_or_init(|| regex::Regex::new(r"(https?://\S+)").unwrap());
+    if let Some(captures) = url_regex.captures(text) {
+        if let Some(match_) = captures.get(0) {
+            let url = match_.as_str().to_string();
+            let clients_clone = clients.clone();
+            let room_clone = room.clone();
+            let msg_id = item.id.clone();
+            
+            // Spawn background task to fetch metadata
+            tokio::spawn(async move {
+                if let Some((title, desc, image)) = crate::helpers::fetch_preview(&url).await {
+                    let preview_msg = Outgoing::LinkPreview {
+                        msg_id,
+                        title,
+                        description: desc,
+                        image,
+                        url,
+                    };
+                    // Broadcast preview to proper room
+                    if let Ok(json) = serde_json::to_string(&preview_msg) {
+                        for r in clients_clone.iter() {
+                            if r.value().room == room_clone {
+                                let _ = r.value().tx.send(warp::ws::Message::text(json.clone()));
+                            }
+                        }
+                    }
+                }
+            });
+        }
+    }
 }
 
 /// Helper: send system message to a single client.

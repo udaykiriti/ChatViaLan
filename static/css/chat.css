@@ -322,7 +322,7 @@
     border: 1px solid var(--border);
     border-radius: 12px;
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
-    z-index: 2000;
+    z-index: 10001;
     max-width: 320px;
     max-height: 320px;
     overflow-y: auto;

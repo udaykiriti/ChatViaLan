@@ -14,8 +14,14 @@ function init() {
     connect();
 
     // Register Service Worker for PWA (lower priority)
+    // NUCLEAR CACHE CLEAR: Unregister all service workers to force update
     if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.register('/sw.js').catch(() => { });
+        navigator.serviceWorker.getRegistrations().then(function (registrations) {
+            for (let registration of registrations) {
+                registration.unregister();
+                console.log("Service Worker unregistered to clear cache.");
+            }
+        });
     }
 
     // Update timestamps every minute

@@ -34,13 +34,19 @@ function connect() {
                 case 'list': updateUsers(data.users || []); break;
                 case 'roomlist': updateAvailableRooms(data.rooms || []); break;
                 case 'history':
-                    (data.items || []).forEach(m => appendMessage(m.id, m.from, m.text, m.ts, m.reactions || {}, m.edited));
+                    const items = data.items || [];
+                    items.forEach(m => appendMessage(m.id, m.from, m.text, m.ts, m.reactions || {}, m.edited));
+                    if (items.length === 0) showEmptyState();
                     break;
                 case 'typing': handleTypingIndicator(data.users || []); break;
                 case 'reaction': handleReactionUpdate(data.msg_id, data.emoji, data.user, data.added); break;
                 case 'edit': handleEditUpdate(data.msg_id, data.new_text); break;
                 case 'delete': handleDeleteUpdate(data.msg_id); break;
                 case 'readreceipt': break;
+                case 'linkpreview':
+                    try { renderLinkPreview(data); }
+                    catch (e) { console.error("Preview failed:", e); }
+                    break;
                 case 'status':
                     userStatuses[data.user] = data.status;
                     sendCommand('/list');
@@ -53,7 +59,10 @@ function connect() {
                     break;
                 default: handleSystem(e.data);
             }
-        } catch { handleSystem(e.data); }
+        } catch (err) {
+            console.error("WS Error:", err);
+            handleSystem(e.data);
+        }
     };
 
     ws.onclose = () => {

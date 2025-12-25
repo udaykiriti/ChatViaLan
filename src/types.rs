@@ -65,7 +65,8 @@ pub enum Outgoing {
     ReadReceipt { user: String, last_msg_id: String },
     Mention { from: String, text: String, mentioned: String },
     RoomList { rooms: Vec<RoomInfo> },
-    Status { user: String, status: String }, // "active", "idle", "offline"
+    Status { user: String, status: String },
+    LinkPreview { msg_id: String, title: String, description: String, image: String, url: String },
 }
 
 /// Room info for available rooms list.
