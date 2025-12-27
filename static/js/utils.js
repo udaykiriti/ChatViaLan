@@ -11,11 +11,11 @@ function linkify(text) {
         const isImage = IMAGE_EXTENSIONS.includes(extension);
 
         if (isImage) {
-            return `<a href="${url}" target="_blank" class="image-link">
+            return `<a href="${url}" target="_blank" rel="noopener noreferrer" class="image-link">
         <img src="${url}" alt="Image" class="image-preview" loading="lazy" onerror="this.style.display='none'">
       </a>`;
         }
-        return `<a href="${url}" target="_blank" class="link-preview">🔗 ${url.length > 40 ? url.slice(0, 40) + '...' : url}</a>`;
+        return `<a href="${url}" target="_blank" rel="noopener noreferrer" class="link-preview">🔗 ${url.length > 40 ? url.slice(0, 40) + '...' : url}</a>`;
     });
 }
 

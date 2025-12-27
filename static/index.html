@@ -5,6 +5,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>LAN Chat</title>
+  <meta name="description" content="A real-time, offline-friendly LAN chat application built with Rust and WebSockets.">
 
 
   <!-- Prism.js for syntax highlighting -->
@@ -28,6 +29,9 @@
   <!-- Sidebar Overlay (mobile) -->
   <div class="sidebar-overlay" id="sidebarOverlay"></div>
 
+  <!-- Toast Container -->
+  <div class="toast-container" id="toastContainer"></div>
+
   <!-- Emoji Picker Popup -->
   <div class="emoji-picker" id="emojiPicker"></div>
 
@@ -37,7 +41,7 @@
       <div class="sidebar-header">
         <h2>Chats</h2>
         <div style="display:flex;gap:8px;">
-          <button class="close-sidebar" id="closeSidebar">✕</button>
+          <button class="close-sidebar" id="closeSidebar" aria-label="Close sidebar">✕</button>
         </div>
       </div>
 
@@ -45,7 +49,7 @@
       <div class="sidebar-section">
         <div class="search-box">
           <input type="text" id="searchInput" placeholder="🔍 Search messages...">
-          <button id="clearSearch" class="clear-search hidden">✕</button>
+          <button id="clearSearch" class="clear-search hidden" aria-label="Clear search">✕</button>
         </div>
       </div>
 
@@ -55,7 +59,7 @@
         <ul class="room-list" id="roomList"></ul>
         <div class="new-room">
           <input type="text" id="newRoomInput" placeholder="New room...">
-          <button id="joinRoomBtn">+</button>
+          <button id="joinRoomBtn" aria-label="Join room">+</button>
         </div>
       </div>
 
@@ -94,7 +98,8 @@
       <div class="sidebar-section shortcuts-section">
         <div class="section-title" style="display:flex;justify-content:space-between;align-items:center;">
           Formatting
-          <button id="mdHelpBtn" style="background:none;border:none;cursor:pointer;opacity:0.7;">❓</button>
+          <button id="mdHelpBtn" style="background:none;border:none;cursor:pointer;opacity:0.7;"
+            aria-label="Markdown help">❓</button>
         </div>
         <div class="shortcuts-list">
           <span><code>**bold**</code></span>
@@ -109,7 +114,7 @@
     <main class="chat-main">
       <header class="chat-header">
         <div class="header-left">
-          <button class="menu-btn" id="menuBtn">☰</button>
+          <button class="menu-btn" id="menuBtn" aria-label="Open menu">☰</button>
           <span class="status-dot" id="statusDot"></span>
           <span id="connectionStatus">connecting...</span>
         </div>
@@ -132,7 +137,7 @@
       <div class="search-results hidden" id="searchResults">
         <div class="search-header">
           <span>Search Results</span>
-          <button id="closeSearch">✕</button>
+          <button id="closeSearch" aria-label="Close search">✕</button>
         </div>
         <div class="search-items" id="searchItems"></div>
       </div>
@@ -148,8 +153,8 @@
             <input type="file" id="fileInput" hidden accept="image/*,video/*,audio/*,.pdf,.doc,.docx,.txt">
             📎
           </label>
-          <button class="emoji-btn" id="emojiBtn">😀</button>
-          <input type="text" id="textInput" placeholder="Type a message... (Markdown supported)" disabled>
+          <button class="emoji-btn" id="emojiBtn" aria-label="Open emoji picker">😀</button>
+          <textarea id="textInput" placeholder="Type a message... (Markdown supported)" disabled rows="1"></textarea>
           <button id="sendBtn" disabled>Send</button>
         </div>
         <div class="upload-row">

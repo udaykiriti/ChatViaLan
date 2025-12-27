@@ -1,7 +1,5 @@
-// ===== Message Rendering =====
-
 function appendSystem(text) {
-  hideEmptyState(); // Hide empty state when any message arrives
+  hideEmptyState();
   const div = document.createElement('div');
   div.className = 'message system';
   div.innerHTML = '<div class="message-bubble">' + escapeHtml(text) + '</div>';
@@ -65,8 +63,15 @@ function appendMessage(id, from, text, ts, reactions = {}, edited = false, reply
     <div class="message-bubble">${linkify(highlightMentions(escapeHtml(text)))}</div>
     ${createReactionBar(id, reactions)}
   `;
+  // Check if user is scrolled to bottom before appending
+  const isScrolledToBottom = DOM.messagesEl.scrollHeight - DOM.messagesEl.scrollTop <= DOM.messagesEl.clientHeight + 100;
+
   DOM.messagesEl.appendChild(div);
-  DOM.messagesEl.scrollTop = DOM.messagesEl.scrollHeight;
+
+  // Auto-scroll only if we were already at the bottom OR if we sent the message
+  if (isScrolledToBottom || isMine) {
+    DOM.messagesEl.scrollTop = DOM.messagesEl.scrollHeight;
+  }
 
   lastMsgId = id;
 

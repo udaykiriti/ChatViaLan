@@ -255,7 +255,7 @@
     background: var(--surface-elevated);
 }
 
-.input-row input {
+.input-row textarea {
     flex: 1;
     min-width: 0;
     padding: 10px 14px;
@@ -264,13 +264,20 @@
     border-radius: 20px;
     color: var(--text);
     font-size: 0.9rem;
+    resize: none;
+    height: 40px;
+    min-height: 40px;
+    max-height: 120px;
+    line-height: 1.4;
+    overflow-y: hidden;
+    font-family: inherit;
 }
 
-.input-row input::placeholder {
+.input-row textarea::placeholder {
     color: var(--text-muted);
 }
 
-.input-row input:disabled {
+.input-row textarea:disabled {
     opacity: 0.5;
 }
 

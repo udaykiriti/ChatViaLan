@@ -16,6 +16,14 @@ body {
 
 /* ===== Tablet & Mobile (< 768px) ===== */
 @media (max-width: 768px) {
+    /* 0. Missing Base Styles (Consolidated) */
+    .header-right input {
+        width: 70px;
+    }
+
+    #connectionStatus {
+        display: none;
+    }
 
     /* 1. App Layout - Sidebar Drawer */
     .app {
@@ -32,7 +40,7 @@ body {
         width: 85%;
         max-width: 320px;
         height: 100%;
-        z-index: 100;
+        z-index: 1000;
         transform: translateX(-100%);
         transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         box-shadow: 2px 0 12px rgba(0, 0, 0, 0.3);
@@ -50,7 +58,7 @@ body {
         right: 0;
         bottom: 0;
         background: rgba(0, 0, 0, 0.6);
-        z-index: 90;
+        z-index: 999;
         opacity: 0;
         visibility: hidden;
         transition: opacity 0.3s;
