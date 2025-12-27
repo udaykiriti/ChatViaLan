@@ -12,17 +12,6 @@
 A fully local, offline-friendly, multi-user chat system built with **Rust**, **Warp**, and **WebSockets**.  
 Featuring multiple themes, a classic/modern hybrid UI, and robust admin tools.
 
----
-
-## Gallery
-
-![Classic Theme](https://placehold.co/800x500/1e1e1e/FFF?text=Classic+Theme+Screenshot)
-*The Classic Theme - Reminiscent of old-school forums.*
-
-![Midnight Theme](https://placehold.co/800x500/0f172a/FFF?text=Midnight+Theme+Screenshot)
-*The Midnight Theme - Modern, sleek, and dark.*
-
----
 
 ## Features
 
