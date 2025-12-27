@@ -232,6 +232,7 @@ pub async fn handle_cmd_with_rooms(
   /list            - List users in room
   /who             - Show users with status
   /kick <user>     - Kick a user (logged-in only)
+  /nudge           - Send a nudge (shake screen)
   /history         - Reload chat history
   /stats           - Show server metrics
   /help            - Show this help"#;
@@ -248,6 +249,23 @@ pub async fn handle_cmd_with_rooms(
                 })
                 .collect();
             send_to_client(clients, client_id, &format!("Users in '{}': {}", room, user_info.join(", "))).await;
+        }
+        "/nudge" => {
+            let from = client_name_by_id(clients, client_id).await;
+            let room = get_client_room(clients, client_id).await;
+            
+            // Broadcast Nudge
+            let msg = Outgoing::Nudge { from: from.clone() };
+            if let Ok(json) = serde_json::to_string(&msg) {
+                for r in clients.iter() {
+                    if r.value().room == room {
+                        let _ = r.value().tx.send(warp::ws::Message::text(json.clone()));
+                    }
+                }
+            }
+            
+            // System message announcement
+            send_system_to_room(clients, histories, &room, &format!("{} sent a nudge!", from)).await;
         }
         _ => {
             send_to_client(clients, client_id, "Unknown command. Type /help for available commands.").await;

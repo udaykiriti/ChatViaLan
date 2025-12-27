@@ -57,6 +57,9 @@ function connect() {
                         incrementUnread();
                     }
                     break;
+                case 'nudge':
+                    handleNudge(data.from);
+                    break;
                 default: handleSystem(e.data);
             }
         } catch (err) {
