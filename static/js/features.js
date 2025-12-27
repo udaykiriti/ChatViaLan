@@ -77,3 +77,46 @@ function closeSidebar() {
     if (DOM.sidebar) DOM.sidebar.classList.remove('active');
     if (DOM.sidebarOverlay) DOM.sidebarOverlay.classList.remove('active');
 }
+
+// ===== Nudge Feature =====
+
+function handleNudge(from) {
+    // 1. Shake the App
+    const app = document.querySelector('.app');
+    if (app) {
+        app.classList.remove('shake');
+        void app.offsetWidth; // Trigger reflow
+        app.classList.add('shake');
+        setTimeout(() => app.classList.remove('shake'), 500);
+    }
+
+    // 2. Play Nudge Sound (Synthesized "Buzz")
+    if (soundEnabled) {
+        try {
+            const AudioContext = window.AudioContext || window.webkitAudioContext;
+            if (AudioContext) {
+                const ctx = new AudioContext();
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(150, ctx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(100, ctx.currentTime + 0.15);
+
+                gain.gain.setValueAtTime(0.5, ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.15);
+
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+
+                osc.start();
+                osc.stop(ctx.currentTime + 0.2);
+            } else {
+                // Fallback
+                playNotificationSound();
+            }
+        } catch (e) {
+            console.error('Audio error:', e);
+        }
+    }
+}

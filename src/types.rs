@@ -67,6 +67,7 @@ pub enum Outgoing {
     RoomList { rooms: Vec<RoomInfo> },
     Status { user: String, status: String },
     LinkPreview { msg_id: String, title: String, description: String, image: String, url: String },
+    Nudge { from: String },
 }
 
 /// Room info for available rooms list.
