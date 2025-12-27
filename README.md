@@ -1,168 +1,145 @@
 # Rust Chat — Real-Time WebSocket Chat Server
 
+![Rust](https://img.shields.io/badge/rust-v1.75%2B-orange.svg)
+![License](https://img.shields.io/badge/license-MIT-blue.svg)
+![Maintained](https://img.shields.io/badge/maintained-yes-green.svg)
+![Repo Size](https://img.shields.io/github/repo-size/udaykiriti/LAN-CHAT-RUST)
+![Last Commit](https://img.shields.io/github/last-commit/udaykiriti/LAN-CHAT-RUST)
+![Issues](https://img.shields.io/github/issues/udaykiriti/LAN-CHAT-RUST)
+![Stars](https://img.shields.io/github/stars/udaykiriti/LAN-CHAT-RUST?style=social)
+![Forks](https://img.shields.io/github/forks/udaykiriti/LAN-CHAT-RUST?style=social)
+
 A fully local, offline-friendly, multi-user chat system built with **Rust**, **Warp**, and **WebSockets**.  
-Featuring multiple themes and a classic/modern hybrid UI.
+Featuring multiple themes, a classic/modern hybrid UI, and robust admin tools.
+
+---
+
+## Gallery
+
+![Classic Theme](https://placehold.co/800x500/1e1e1e/FFF?text=Classic+Theme+Screenshot)
+*The Classic Theme - Reminiscent of old-school forums.*
+
+![Midnight Theme](https://placehold.co/800x500/0f172a/FFF?text=Midnight+Theme+Screenshot)
+*The Midnight Theme - Modern, sleek, and dark.*
 
 ---
 
 ## Features
 
 ### Core
-- Real-time WebSocket messaging
-- Multiple rooms with member counts
-- User accounts (register/login) + guest mode
-- Private messaging
-- File upload & sharing
-- **Persistent message history (non-blocking async I/O)**
+- **Real-time Messaging**: Instant delivery via WebSockets.
+- **Rooms**: Multiple channels with active member counts.
+- **Auth**: User accounts (Register/Login) and Guest mode.
+- **Privacy**: Secure private messaging (stored separately) and file sharing.
+- **Persistence**: Chat history saved asynchronously (JSON).
 
 ### Advanced
-- **Link Previews** (Open Graph metadata extraction)
-- **Emoji Picker** (categorized emoji selection)
-- **Online Status & Idle Tracking** (Active/Idle indicators)
-- **Admin Moderation** (`/kick` command)
-- **Secure Private Messaging** (Stored separately from rooms)
-- **Profanity Filter** (Auto-censors banned words)
-- **Pinned Messages** with "click to jump" functionality
-- **PWA Support** (Installable on mobile/desktop)
-- Message reactions (👍 ❤️ 😂 😮 😢 🎉)
-- Edit & delete messages
-- @mentions with profile modals
-- Typing indicators
-- Sound notifications + unread count
-- Rate limiting (5 msg / 10 sec)
-- **Markdown Support** (with '?' Cheat Sheet)
-
-### Themes
-- **Classic Theme** — Newspaper/XP/BBS hybrid with serif fonts, blue gradients, alternating rows
-- **Midnight Theme** — Modern dark mode with cyan/purple accents and glow effects
-- Dark/Light mode toggle (persistent preference)
-
-### UI/UX
-- Messenger-style bubble layout OR classic forum-style (theme dependent)
-- **Smooth animations** with polished hover effects
-- **Interactive Profile Modals** in the user list
-- **Empty state messaging** for new rooms
-- Available rooms with auto-refresh
-- Fully responsive (mobile + desktop)
+- **Link Previews**: Automatic Open Graph metadata extraction (Title, Description, Image).
+- **Interactive UI**:
+    - **Emoji Picker**: Categorized emojis with skin tone support.
+    - **Reactions**: React to messages (👍 ❤️ 😂 😮 😢 🎉).
+    - **Mentions**: `@user` support with profile modals.
+    - **Typing Indicators**: Real-time "User is typing..." status.
+- **Engagement**:
+    - **Nudge**: `/nudge` command to shake the room and play a sound.
+    - **Pinned Messages**: Pin important messages for easy access.
+    - **Online Status**: Auto-away/idle detection.
+- **Ease of Use**:
+    - **QR Code LAN Connect**: Scan terminal QR code to join from mobile.
+    - **PWA**: Installable on mobile and desktop devices.
+    - **Shortcuts**: extensive keyboard control.
+- **Safety**:
+    - **Profanity Filter**: Auto-censoring of banned words.
+    - **Moderation**: `/kick` command for admins.
 
 ---
 
 ## Themes
 
-Switch themes by changing the CSS link in `static/index.html`:
+Switch themes instantly in `static/index.html`:
+
+| Theme | Description |
+|-------|-------------|
+| **Classic** | Newspaper/XP hybrid, serif fonts, blue gradients. (Default) |
+| **Midnight** | Modern dark mode, cyan/purple accents, glow effects. |
 
 ```html
-<!-- Classic Theme (Newspaper/XP/BBS) -->
-<link rel="stylesheet" href="css/classic.css">
-
-<!-- Midnight Theme (Modern Dark) -->
+<!-- Example: Enable Midnight Theme -->
 <link rel="stylesheet" href="css/midnight.css">
-```
-
----
-
-## Project Structure
-
-```
-rust-chat/
-├── Cargo.toml
-├── users.json              # User accounts
-├── history.json            # Persistent chat history
-├── uploads/                # Uploaded files
-├── static/
-│   ├── index.html
-│   ├── manifest.json       # PWA Manifest
-│   ├── sw.js               # Service Worker
-│   ├── favicon.svg
-│   ├── css/
-│   │   ├── base.css        # CSS variables & layout
-│   │   ├── sidebar.css     # Sidebar styles
-│   │   ├── chat.css        # Chat area styles
-│   │   ├── messages.css    # Message styles
-│   │   ├── polish.css      # UI polish & animations
-│   │   ├── classic.css     # Classic theme
-│   │   ├── midnight.css    # Dark theme
-│   │   └── mobile-fix.css  # Mobile responsiveness
-│   └── js/
-│       ├── main.js         # Entry point
-│       ├── websocket.js    # WebSocket handler
-│       ├── messages.js     # Message rendering
-│       ├── events.js       # Event listeners
-│       ├── features.js     # Theme/sound/typing
-│       ├── reactions.js    # Reaction system
-│       ├── utils.js        # Utilities & emoji picker
-│       ├── config.js       # Configuration
-│       ├── state.js        # App state
-│       └── dom.js          # DOM references
-└── src/
-    ├── main.rs             # Server entry
-    ├── types.rs            # Type definitions
-    ├── room.rs             # Room & history management
-    ├── commands.rs         # Command handling
-    ├── helpers.rs          # Utility functions
-    ├── auth.rs             # Authentication
-    ├── rate_limit.rs       # Rate limiting
-    ├── typing.rs           # Typing indicators
-    └── client.rs           # Client management
 ```
 
 ---
 
 ## Quick Start
 
+### 1. Run the Server
 ```bash
-# Run server
 cargo run --release
-
-# Open browser
-# Local: http://localhost:8080
 ```
+
+### 2. Connect
+- **Localhost**: Visit `http://localhost:8080`
+- **LAN (Mobile)**: Scan the QR code printed in your terminal.
 
 ---
 
 ## Commands
 
-| Command | Description |
-|---------|-------------|
-| `/name <name>` | Set display name |
-| `/register <u> <p>` | Create account |
-| `/login <u> <p>` | Log in |
-| `/msg <user> <text>` | Private message |
-| `/join <room>` | Join room |
-| `/kick <user>` | Kick a user (Admin only) |
-| `/stats` | Show server metrics (Mem, Clients) |
-| `/rooms` | List rooms |
-| `/leave` | Return to lobby |
-| `/who` | List users with status |
-| `/pin <msg_id>` | Pin a message |
-| `/help` | Show commands |
+| Command | Usage | Description |
+|---------|-------|-------------|
+| **Identity** | `/name <name>` | Set your display name. |
+| **Auth** | `/register <u> <p>` | Create a new account. |
+| | `/login <u> <p>` | Log in to your account. |
+| **Chat** | `/msg <user> <text>` | Send a private message. |
+| | `/join <room>` | Switch rooms (e.g., `/join tech`). |
+| | `/nudge` | **Shake screen** & play sound. |
+| | `/pin <msg_id>` | Pin a message to the top. |
+| **Info** | `/who` | List users in current room. |
+| | `/stats` | Show server memory & connections. |
+| **Admin** | `/kick <user>` | Kick a user (Admin only). |
+
+## Keyboard Shortcuts
+
+| Shortcut | Action |
+|----------|--------|
+| `/` | Focus text input. |
+| `Esc` | Close modals or sidebar. |
+| `↑` / `↓` | Navigate command suggestions. |
+| `Tab` | Autocomplete command from suggestion. |
+| `Enter` | Send message. |
 
 ---
 
-## Tech Stack
+## API Endpoints
 
-- **Backend**: Rust (Warp, Tokio, DashMap)
-- **Link Previews**: reqwest + scraper (Open Graph)
-- **Frontend**: Vanilla JS, CSS (Modular structure)
-- **Persistence**: JSON-based (Users, History) with async I/O
-- **PWA**: Manifest, Service Worker
-- **Performance**: OnceLock caching for Regex/Selectors
+The server exposes endpoints for monitoring and health checks:
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `GET` | `/health` | Basic status (uptime, client count). |
+| `GET` | `/metrics` | Detailed stats (memory usage, total messages, rooms). |
 
 ---
+
+## Technical Details
+
+- **Backend**: Rust (Warp, Tokio)
+    - *State Management*: `DashMap` for high-concurrency capability.
+    - *Discovery*: `mdns-sd` for zero-config LAN discovery.
+- **Frontend**: Vanilla JavaScript (ES6+), Modular CSS.
+    - *No Frameworks*: Lightweight and fast.
+- **Storage**: JSON-based flat files with non-blocking async I/O (`tokio::fs`).
 
 ## Recent Updates
 
-- ✅ Link preview generation (Open Graph metadata)
-- ✅ Emoji picker with categorized emojis
-- ✅ Classic theme (Newspaper/XP/BBS hybrid)
-- ✅ Midnight theme (Modern dark mode)
-- ✅ Non-blocking file I/O (tokio::fs)
-- ✅ Regex/Selector caching (OnceLock)
-- ✅ Mobile sidebar fixes
-- ✅ UI polish pass (hover effects, animations)
+-  **Nudge**: Added retro shake effect.
+-  **LAN Discovery**: Integrated QR code generation.
+-  **Observability**: Added `/health` and `/metrics` APIs.
+-  **Visuals**: Polished UI with smooth animations and hover effects.
 
 ---
 
 ## License
 
 MIT
+[Read the License](LICENSE)
