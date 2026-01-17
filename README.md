@@ -6,8 +6,6 @@
 ![Repo Size](https://img.shields.io/github/repo-size/udaykiriti/LAN-CHAT-RUST)
 ![Last Commit](https://img.shields.io/github/last-commit/udaykiriti/LAN-CHAT-RUST)
 ![Issues](https://img.shields.io/github/issues/udaykiriti/LAN-CHAT-RUST)
-![Stars](https://img.shields.io/github/stars/udaykiriti/LAN-CHAT-RUST?style=social)
-![Forks](https://img.shields.io/github/forks/udaykiriti/LAN-CHAT-RUST?style=social)
 
 A fully local, offline-friendly, multi-user chat system built with **Rust**, **Warp**, and **WebSockets**.  
 Featuring multiple themes, a classic/modern hybrid UI, and robust admin tools.
