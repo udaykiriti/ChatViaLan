@@ -125,19 +125,25 @@ pub async fn broadcast_to_room_and_store(
             }
         }
 
-        // Send mention notifications to mentioned users
-        for mentioned in &mentions {
-            for r in clients.iter() {
-                let c = r.value();
-                if c.name.to_lowercase() == mentioned.to_lowercase() && c.room == room {
-                    let mention_msg = Outgoing::Mention {
-                        from: item.from.clone(),
-                        text: item.text.clone(),
-                        mentioned: mentioned.clone(),
-                    };
-                    if let Ok(m) = serde_json::to_string(&mention_msg) {
-                        let _ = c.tx.send(warp::ws::Message::text(m));
-                    }
+        // Send mention notifications with a single pass over room clients.
+        let mention_lookup: HashMap<String, String> = mentions
+            .into_iter()
+            .map(|m| (m.to_lowercase(), m))
+            .collect();
+        for r in clients.iter() {
+            let c = r.value();
+            if c.room != room {
+                continue;
+            }
+            let name_lower = c.name.to_lowercase();
+            if let Some(mentioned) = mention_lookup.get(&name_lower) {
+                let mention_msg = Outgoing::Mention {
+                    from: item.from.clone(),
+                    text: item.text.clone(),
+                    mentioned: mentioned.clone(),
+                };
+                if let Ok(m) = serde_json::to_string(&mention_msg) {
+                    let _ = c.tx.send(warp::ws::Message::text(m));
                 }
             }
         }
