@@ -67,22 +67,20 @@ pub async fn send_user_list_to_room(clients: &Clients, room: &str) {
         .filter(|r| r.value().room == room)
         .map(|r| r.value().name.clone())
         .collect();
+    let user_count = names.len();
 
-    let msg = Outgoing::List {
-        users: names.clone(),
-    };
-    let s = serde_json::to_string(&msg).unwrap_or_default();
-
-    for r in clients.iter() {
-        let c = r.value();
-        if c.room == room {
-            let _ = c.tx.send(warp::ws::Message::text(s.clone()));
+    let msg = Outgoing::List { users: names };
+    if let Ok(s) = serde_json::to_string(&msg) {
+        for r in clients.iter() {
+            let c = r.value();
+            if c.room == room {
+                let _ = c.tx.send(warp::ws::Message::text(s.clone()));
+            }
         }
     }
     info!(
         "Broadcast user list for room '{}': {} users",
-        room,
-        names.len()
+        room, user_count
     );
 }
 
@@ -178,7 +176,7 @@ pub async fn add_reaction(
                     .reactions
                     .entry(emoji.to_string())
                     .or_insert_with(Vec::new);
-                if users.contains(&user.to_string()) {
+                if users.iter().any(|u| u == user) {
                     users.retain(|u| u != user);
                     false
                 } else {
