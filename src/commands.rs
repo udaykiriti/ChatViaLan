@@ -191,9 +191,9 @@ pub async fn handle_cmd_with_rooms(
                     }
 
                     // Securely store in PrivateHistories
-                    // Key: "alfred,batman" (sorted)
-                    let mut participants = vec![from.clone(), target_name.clone()];
-                    participants.sort();
+                    // Key: "alfred,batman" (sorted, case-insensitive)
+                    let mut participants = [from.to_lowercase(), target_name.clone()];
+                    participants.sort_unstable();
                     let key = participants.join(",");
 
                     let mut locked_ph = private_histories.write().await;
@@ -202,7 +202,7 @@ pub async fn handle_cmd_with_rooms(
                         .or_insert_with(|| VecDeque::with_capacity(200));
                     q.push_back(HistoryItem {
                         id: msg_id,
-                        from: from,
+                        from,
                         text: text.to_string(),
                         ts: now_ts(),
                         reactions: HashMap::new(),
