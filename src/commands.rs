@@ -161,7 +161,8 @@ pub async fn handle_cmd_with_rooms(
         }
         "/msg" => {
             if let (Some(target), Some(text)) = (parts.next(), parts.next()) {
-                let target_name = target.trim().to_lowercase();
+                let target_name = target.trim();
+                let target_name_key = target_name.to_lowercase();
                 let maybe_tx = {
                     let current_room = clients
                         .get(client_id)
@@ -171,7 +172,7 @@ pub async fn handle_cmd_with_rooms(
                         .iter()
                         .find(|r| {
                             let c = r.value();
-                            c.name.to_lowercase() == target_name && c.room == current_room
+                            c.name.eq_ignore_ascii_case(target_name) && c.room == current_room
                         })
                         .map(|r| r.value().tx.clone())
                 };
@@ -192,7 +193,7 @@ pub async fn handle_cmd_with_rooms(
 
                     // Securely store in PrivateHistories
                     // Key: "alfred,batman" (sorted, case-insensitive)
-                    let mut participants = [from.to_lowercase(), target_name.clone()];
+                    let mut participants = [from.to_lowercase(), target_name_key];
                     participants.sort_unstable();
                     let key = participants.join(",");
 
@@ -224,7 +225,7 @@ pub async fn handle_cmd_with_rooms(
         }
         "/kick" => {
             if let Some(target) = parts.next() {
-                let target_name = target.trim().to_lowercase();
+                let target_name = target.trim();
                 let is_logged_in = clients
                     .get(client_id)
                     .map(|r| r.value().logged_in)
@@ -238,7 +239,7 @@ pub async fn handle_cmd_with_rooms(
 
                 let maybe_target_id = clients
                     .iter()
-                    .find(|r| r.value().name.to_lowercase() == target_name)
+                    .find(|r| r.value().name.eq_ignore_ascii_case(target_name))
                     .map(|r| r.key().clone());
 
                 if let Some(tid) = maybe_target_id {
