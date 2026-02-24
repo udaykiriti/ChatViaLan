@@ -3,6 +3,7 @@
 use crate::helpers::{client_name_by_id, client_tx_by_id, now_ts};
 use crate::types::{Clients, Histories, HistoryItem, Outgoing, PrivateHistories, Tx};
 use std::collections::{HashMap, VecDeque};
+use std::sync::OnceLock;
 use tracing::{error, info};
 use uuid::Uuid;
 
@@ -147,7 +148,8 @@ pub async fn broadcast_to_room_and_store(
 
 /// Extract @mentions from text.
 fn extract_mentions(text: &str) -> Vec<String> {
-    let re = regex::Regex::new(r"@(\w+)").unwrap();
+    static MENTION_RE: OnceLock<regex::Regex> = OnceLock::new();
+    let re = MENTION_RE.get_or_init(|| regex::Regex::new(r"@(\w+)").expect("valid mention regex"));
     re.captures_iter(text)
         .filter_map(|cap| cap.get(1).map(|m| m.as_str().to_string()))
         .collect()
