@@ -1,7 +1,7 @@
 //! Room management: broadcasting, history, and room switching.
 
 use crate::helpers::{client_name_by_id, client_tx_by_id, now_ts};
-use crate::types::{Clients, Histories, HistoryItem, Outgoing, Tx};
+use crate::types::{Clients, Histories, HistoryItem, Outgoing, PrivateHistories, Tx};
 use std::collections::{HashMap, VecDeque};
 use tracing::{error, info};
 use uuid::Uuid;
@@ -400,6 +400,33 @@ pub async fn load_history(histories: &Histories) {
                 info!("Loaded chat history from history.json");
             }
             Err(e) => error!("Failed to parse history.json: {}", e),
+        }
+    }
+}
+
+pub async fn save_private_history(private_histories: &PrivateHistories) {
+    let h = private_histories.read().await;
+    match serde_json::to_string(&*h) {
+        Ok(json) => {
+            if let Err(e) = tokio::fs::write("private_history.json", json).await {
+                error!("Failed to save private_history.json: {}", e);
+            } else {
+                info!("Private history saved to private_history.json");
+            }
+        }
+        Err(e) => error!("Failed to serialize private history: {}", e),
+    }
+}
+
+pub async fn load_private_history(private_histories: &PrivateHistories) {
+    if let Ok(json) = tokio::fs::read_to_string("private_history.json").await {
+        match serde_json::from_str::<HashMap<String, VecDeque<HistoryItem>>>(&json) {
+            Ok(loaded) => {
+                let mut h = private_histories.write().await;
+                *h = loaded;
+                info!("Loaded private history from private_history.json");
+            }
+            Err(e) => error!("Failed to parse private_history.json: {}", e),
         }
     }
 }

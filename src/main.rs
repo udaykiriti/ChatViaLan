@@ -53,6 +53,7 @@ async fn main() -> anyhow::Result<()> {
 
     // Load history from disk
     crate::room::load_history(&histories).await;
+    crate::room::load_private_history(&private_histories).await;
 
     // Ensure persistent rooms exist
     {
@@ -254,6 +255,16 @@ async fn main() -> anyhow::Result<()> {
         }
     });
 
+    // Background task for periodic private-history saving (every 5 minutes)
+    let private_histories_saver = private_histories.clone();
+    tokio::task::spawn(async move {
+        let mut interval = tokio::time::interval(tokio::time::Duration::from_secs(300));
+        loop {
+            interval.tick().await;
+            crate::room::save_private_history(&private_histories_saver).await;
+        }
+    });
+
     // Print LAN Connection Info (QR Code)
     if let Ok(ip) = local_ip_address::local_ip() {
         let address = format!("http://{}:{}", ip, port);
@@ -283,6 +294,7 @@ async fn main() -> anyhow::Result<()> {
 
             // Save history
             crate::room::save_history(&histories).await;
+            crate::room::save_private_history(&private_histories).await;
 
             // Force save users before exit
             let users_map: HashMap<String, String> = users.iter()
