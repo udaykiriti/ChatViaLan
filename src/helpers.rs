@@ -3,7 +3,7 @@
 use crate::types::{Clients, Tx};
 use regex::Regex;
 use std::sync::OnceLock;
-use std::time::SystemTime;
+use std::time::{Duration, SystemTime};
 
 /// Get client name by ID.
 pub async fn client_name_by_id(clients: &Clients, id: &str) -> String {
@@ -52,13 +52,46 @@ pub async fn make_unique_name(clients: &Clients, desired: &str) -> String {
 
 /// Fetch URL preview (OG tags)
 pub async fn fetch_preview(url: &str) -> Option<(String, String, String)> {
+    const MAX_PREVIEW_BYTES: usize = 256 * 1024;
     static TITLE_SEL: OnceLock<scraper::Selector> = OnceLock::new();
     static DESC_SEL: OnceLock<scraper::Selector> = OnceLock::new();
     static IMAGE_SEL: OnceLock<scraper::Selector> = OnceLock::new();
     static TITLE_TAG: OnceLock<scraper::Selector> = OnceLock::new();
+    static HTTP_CLIENT: OnceLock<reqwest::Client> = OnceLock::new();
 
-    let resp = reqwest::get(url).await.ok()?;
-    let html = resp.text().await.ok()?;
+    let client = HTTP_CLIENT.get_or_init(|| {
+        reqwest::Client::builder()
+            .timeout(Duration::from_secs(5))
+            .connect_timeout(Duration::from_secs(3))
+            .user_agent("rust-chat-link-preview/1.0")
+            .redirect(reqwest::redirect::Policy::limited(5))
+            .build()
+            .expect("valid reqwest client")
+    });
+
+    let resp = client.get(url).send().await.ok()?;
+    if !resp.status().is_success() {
+        return None;
+    }
+
+    if let Some(content_type) = resp.headers().get(reqwest::header::CONTENT_TYPE) {
+        let ct = content_type.to_str().ok()?.to_ascii_lowercase();
+        if !ct.contains("text/html") && !ct.contains("application/xhtml+xml") {
+            return None;
+        }
+    }
+
+    if let Some(len) = resp.content_length() {
+        if len as usize > MAX_PREVIEW_BYTES {
+            return None;
+        }
+    }
+
+    let html_bytes = resp.bytes().await.ok()?;
+    if html_bytes.len() > MAX_PREVIEW_BYTES {
+        return None;
+    }
+    let html = String::from_utf8(html_bytes.to_vec()).ok()?;
 
     let document = scraper::Html::parse_document(&html);
 
