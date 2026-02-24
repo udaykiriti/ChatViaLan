@@ -3,9 +3,6 @@
 ![Rust](https://img.shields.io/badge/rust-v1.75%2B-orange.svg)
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
 ![Maintained](https://img.shields.io/badge/maintained-yes-green.svg)
-![Repo Size](https://img.shields.io/github/repo-size/udaykiriti/LAN-CHAT-RUST)
-![Last Commit](https://img.shields.io/github/last-commit/udaykiriti/LAN-CHAT-RUST)
-![Issues](https://img.shields.io/github/issues/udaykiriti/LAN-CHAT-RUST)
 
 A fully local, offline-friendly, multi-user chat system built with **Rust**, **Warp**, and **WebSockets**.  
 Featuring multiple themes, a classic/modern hybrid UI, and robust admin tools.
@@ -41,19 +38,9 @@ Featuring multiple themes, a classic/modern hybrid UI, and robust admin tools.
 
 ---
 
-## Themes
+## UI
 
-Switch themes instantly in `static/index.html`:
-
-| Theme | Description |
-|-------|-------------|
-| **Classic** | Newspaper/XP hybrid, serif fonts, blue gradients. (Default) |
-| **Midnight** | Modern dark mode, cyan/purple accents, glow effects. |
-
-```html
-<!-- Example: Enable Midnight Theme -->
-<link rel="stylesheet" href="css/midnight.css">
-```
+The app uses modular CSS (`base`, `sidebar`, `chat`, `messages`, `msn`, `responsive`) with a classic/retro visual style out of the box.
 
 ---
 
@@ -79,10 +66,15 @@ cargo run --release
 | | `/login <u> <p>` | Log in to your account. |
 | **Chat** | `/msg <user> <text>` | Send a private message. |
 | | `/join <room>` | Switch rooms (e.g., `/join tech`). |
+| | `/leave` | Return to `lobby`. |
+| | `/rooms` | List all available rooms and member counts. |
+| | `/room` | Show your current room. |
+| | `/list` | Broadcast user list for current room. |
 | | `/nudge` | **Shake screen** & play sound. |
-| | `/pin <msg_id>` | Pin a message to the top. |
+| | `/history` | Reload current room history. |
 | **Info** | `/who` | List users in current room. |
 | | `/stats` | Show server memory & connections. |
+| | `/help` | Show available commands. |
 | **Admin** | `/kick <user>` | Kick a user (Admin only). |
 
 ## Keyboard Shortcuts
@@ -117,12 +109,18 @@ The server exposes endpoints for monitoring and health checks:
     - *No Frameworks*: Lightweight and fast.
 - **Storage**: JSON-based flat files with non-blocking async I/O (`tokio::fs`).
 
+## Notes
+
+- Runtime files (`history.json`, `users.json`, `uploads/`) are generated locally while the server runs.
+- PWA support is enabled via `static/sw.js` registration from the frontend.
+- `reqwest` is configured with Rustls TLS, so OpenSSL system development packages are not required for normal builds.
+
 ## Recent Updates
 
--  **Nudge**: Added retro shake effect.
--  **LAN Discovery**: Integrated QR code generation.
--  **Observability**: Added `/health` and `/metrics` APIs.
--  **Visuals**: Polished UI with smooth animations and hover effects.
+- **Stability**: Improved startup resilience for mDNS/QR paths.
+- **WebSocket Lifecycle**: Fixed early-auth disconnect handling.
+- **PM History**: Normalized private-history keys case-insensitively.
+- **Build Portability**: Switched HTTP TLS backend to Rustls.
 
 ---
 
