@@ -52,7 +52,7 @@ impl ServerMetrics {
                 }
             }
         }
-        
+
         // Fallback: return 0 if we can't determine
         0
     }

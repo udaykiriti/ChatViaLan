@@ -1,10 +1,10 @@
 //! User authentication: registration, login, and secure bcrypt hashing.
 
+use bcrypt::{hash, verify, DEFAULT_COST};
 use std::collections::HashMap;
 use std::fs;
 use std::path::Path;
-use bcrypt::{hash, verify, DEFAULT_COST};
-use tracing::{info, error};
+use tracing::{error, info};
 
 use crate::types::Users;
 
@@ -37,22 +37,23 @@ pub async fn register_user(users: &Users, username: &str, password: &str) -> Res
     if users.contains_key(username) {
         return Err("username already exists".into());
     }
-    
+
     // Hash password with bcrypt
     let hashed = hash(password, DEFAULT_COST).map_err(|e| format!("hash error: {}", e))?;
-    
+
     users.insert(username.to_string(), hashed);
-    
+
     // Create a copy for saving (synchronous collection)
-    let map_to_save: HashMap<String, String> = users.iter()
+    let map_to_save: HashMap<String, String> = users
+        .iter()
         .map(|r| (r.key().clone(), r.value().clone()))
         .collect();
-    
+
     if let Err(e) = save_users_async(map_to_save).await {
         error!("failed to save users: {}", e);
         return Err(format!("failed to save users: {}", e));
     }
-    
+
     info!("Registered new user: {}", username);
     Ok(())
 }

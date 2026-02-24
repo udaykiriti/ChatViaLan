@@ -1,11 +1,14 @@
 //! Command handling for chat commands.
 
+use crate::auth::{register_user, verify_login};
+use crate::helpers::{client_name_by_id, client_tx_by_id, make_unique_name, now_ts};
+use crate::room::{
+    broadcast_to_room_and_store, generate_msg_id, join_room, send_history_to_client_room,
+    send_system_to_room, send_user_list_to_room,
+};
+use crate::types::{Clients, Histories, HistoryItem, Outgoing, RoomInfo, Users};
 use std::collections::{HashMap, VecDeque};
 use tracing::info;
-use crate::types::{Clients, Histories, HistoryItem, Outgoing, Users, RoomInfo};
-use crate::auth::{register_user, verify_login};
-use crate::room::{send_system_to_room, send_user_list_to_room, send_history_to_client_room, broadcast_to_room_and_store, join_room, generate_msg_id};
-use crate::helpers::{client_name_by_id, client_tx_by_id, make_unique_name, now_ts};
 
 /// Handle all `/` commands from a connected client.
 pub async fn handle_cmd_with_rooms(
@@ -18,7 +21,7 @@ pub async fn handle_cmd_with_rooms(
 ) {
     let mut parts = cmd_line.splitn(3, ' ');
     let cmd = parts.next().unwrap_or("");
-    
+
     match cmd {
         "/join" => {
             if let Some(room) = parts.next() {
@@ -30,13 +33,19 @@ pub async fn handle_cmd_with_rooms(
         "/rooms" => {
             let room_list: Vec<RoomInfo> = {
                 let locked_h = histories.read().await;
-                locked_h.keys().map(|room_name| {
-                    let member_count = clients.iter().filter(|r| &r.value().room == room_name).count();
-                    RoomInfo {
-                        name: room_name.clone(),
-                        members: member_count,
-                    }
-                }).collect()
+                locked_h
+                    .keys()
+                    .map(|room_name| {
+                        let member_count = clients
+                            .iter()
+                            .filter(|r| &r.value().room == room_name)
+                            .count();
+                        RoomInfo {
+                            name: room_name.clone(),
+                            members: member_count,
+                        }
+                    })
+                    .collect()
             };
             // Send structured room list
             let msg = Outgoing::RoomList { rooms: room_list };
@@ -50,7 +59,10 @@ pub async fn handle_cmd_with_rooms(
             join_room(client_id, "lobby", clients, histories).await;
         }
         "/room" => {
-            let room = clients.get(client_id).map(|r| r.value().room.clone()).unwrap_or_else(|| "lobby".to_string());
+            let room = clients
+                .get(client_id)
+                .map(|r| r.value().room.clone())
+                .unwrap_or_else(|| "lobby".to_string());
             send_to_client(clients, client_id, &format!("Current room: {}", room)).await;
         }
         "/name" => {
@@ -66,10 +78,24 @@ pub async fn handle_cmd_with_rooms(
                     r.value_mut().name = unique_name.clone();
                 }
                 let room = get_client_room(clients, client_id).await;
-                send_system_to_room(clients, histories, &room, &format!("-- {} is now known as {} --", old_name, unique_name)).await;
+                send_system_to_room(
+                    clients,
+                    histories,
+                    &room,
+                    &format!("-- {} is now known as {} --", old_name, unique_name),
+                )
+                .await;
                 send_user_list_to_room(clients, &room).await;
-                send_to_client(clients, client_id, &format!("Your name is now '{}'", unique_name)).await;
-                info!("Client {} (id: {}) changed name to {}", old_name, client_id, unique_name);
+                send_to_client(
+                    clients,
+                    client_id,
+                    &format!("Your name is now '{}'", unique_name),
+                )
+                .await;
+                info!(
+                    "Client {} (id: {}) changed name to {}",
+                    old_name, client_id, unique_name
+                );
             }
         }
         "/list" => {
@@ -80,10 +106,19 @@ pub async fn handle_cmd_with_rooms(
             if let (Some(username), Some(password)) = (parts.next(), parts.next()) {
                 match register_user(users, username.trim(), password.trim()).await {
                     Ok(_) => {
-                        send_to_client(clients, client_id, &format!("Registered '{}'. Use /login to authenticate.", username.trim())).await;
+                        send_to_client(
+                            clients,
+                            client_id,
+                            &format!(
+                                "Registered '{}'. Use /login to authenticate.",
+                                username.trim()
+                            ),
+                        )
+                        .await;
                     }
                     Err(e) => {
-                        send_to_client(clients, client_id, &format!("Register failed: {}", e)).await;
+                        send_to_client(clients, client_id, &format!("Register failed: {}", e))
+                            .await;
                     }
                 }
             }
@@ -98,9 +133,20 @@ pub async fn handle_cmd_with_rooms(
                         c.logged_in = true;
                     }
                     let room = get_client_room(clients, client_id).await;
-                    send_system_to_room(clients, histories, &room, &format!("-- {} logged in --", unique_name)).await;
+                    send_system_to_room(
+                        clients,
+                        histories,
+                        &room,
+                        &format!("-- {} logged in --", unique_name),
+                    )
+                    .await;
                     send_user_list_to_room(clients, &room).await;
-                    send_to_client(clients, client_id, &format!("Logged in as '{}'", unique_name)).await;
+                    send_to_client(
+                        clients,
+                        client_id,
+                        &format!("Logged in as '{}'", unique_name),
+                    )
+                    .await;
                     info!("Client {} logged in as {}", client_id, unique_name);
                 } else {
                     send_to_client(clients, client_id, "Login failed: invalid credentials").await;
@@ -117,8 +163,12 @@ pub async fn handle_cmd_with_rooms(
             if let (Some(target), Some(text)) = (parts.next(), parts.next()) {
                 let target_name = target.trim().to_lowercase();
                 let maybe_tx = {
-                    let current_room = clients.get(client_id).map(|r| r.value().room.clone()).unwrap_or_else(|| "lobby".to_string());
-                    clients.iter()
+                    let current_room = clients
+                        .get(client_id)
+                        .map(|r| r.value().room.clone())
+                        .unwrap_or_else(|| "lobby".to_string());
+                    clients
+                        .iter()
                         .find(|r| {
                             let c = r.value();
                             c.name.to_lowercase() == target_name && c.room == current_room
@@ -128,10 +178,10 @@ pub async fn handle_cmd_with_rooms(
                 if let Some(tx) = maybe_tx {
                     let from = client_name_by_id(clients, client_id).await;
                     let msg_id = generate_msg_id();
-                    let item = Outgoing::Msg { 
-                        id: msg_id.clone(), 
-                        from: from.clone(), 
-                        text: text.to_string(), 
+                    let item = Outgoing::Msg {
+                        id: msg_id.clone(),
+                        from: from.clone(),
+                        text: text.to_string(),
                         ts: now_ts(),
                         reactions: HashMap::new(),
                         edited: false,
@@ -139,41 +189,55 @@ pub async fn handle_cmd_with_rooms(
                     if let Ok(s) = serde_json::to_string(&item) {
                         let _ = tx.send(warp::ws::Message::text(s));
                     }
-                    
+
                     // Securely store in PrivateHistories
                     // Key: "alfred,batman" (sorted)
                     let mut participants = vec![from.clone(), target_name.clone()];
                     participants.sort();
                     let key = participants.join(",");
-                    
+
                     let mut locked_ph = private_histories.write().await;
-                    let q = locked_ph.entry(key).or_insert_with(|| VecDeque::with_capacity(200));
-                    q.push_back(HistoryItem { 
+                    let q = locked_ph
+                        .entry(key)
+                        .or_insert_with(|| VecDeque::with_capacity(200));
+                    q.push_back(HistoryItem {
                         id: msg_id,
-                        from: from, 
-                        text: text.to_string(), 
+                        from: from,
+                        text: text.to_string(),
                         ts: now_ts(),
                         reactions: HashMap::new(),
                         edited: false,
                         deleted: false,
                     });
-                    while q.len() > 200 { q.pop_front(); }
+                    while q.len() > 200 {
+                        q.pop_front();
+                    }
                 } else {
-                    send_to_client(clients, client_id, &format!("User '{}' not found in your room", target.trim())).await;
+                    send_to_client(
+                        clients,
+                        client_id,
+                        &format!("User '{}' not found in your room", target.trim()),
+                    )
+                    .await;
                 }
             }
         }
         "/kick" => {
             if let Some(target) = parts.next() {
                 let target_name = target.trim().to_lowercase();
-                let is_logged_in = clients.get(client_id).map(|r| r.value().logged_in).unwrap_or(false);
-                
+                let is_logged_in = clients
+                    .get(client_id)
+                    .map(|r| r.value().logged_in)
+                    .unwrap_or(false);
+
                 if !is_logged_in {
-                    send_to_client(clients, client_id, "You must be logged in to kick users.").await;
+                    send_to_client(clients, client_id, "You must be logged in to kick users.")
+                        .await;
                     return;
                 }
 
-                let maybe_target_id = clients.iter()
+                let maybe_target_id = clients
+                    .iter()
                     .find(|r| r.value().name.to_lowercase() == target_name)
                     .map(|r| r.key().clone());
 
@@ -182,17 +246,31 @@ pub async fn handle_cmd_with_rooms(
                         send_to_client(clients, client_id, "You cannot kick yourself!").await;
                         return;
                     }
-                    let target_disp_name = clients.get(&tid).map(|r| r.value().name.clone()).unwrap_or_default();
+                    let target_disp_name = clients
+                        .get(&tid)
+                        .map(|r| r.value().name.clone())
+                        .unwrap_or_default();
                     let room = get_client_room(clients, client_id).await;
-                    
+
                     // Notify room
-                    send_system_to_room(clients, histories, &room, &format!("-- {} has been kicked by an admin --", target_disp_name)).await;
-                    
+                    send_system_to_room(
+                        clients,
+                        histories,
+                        &room,
+                        &format!("-- {} has been kicked by an admin --", target_disp_name),
+                    )
+                    .await;
+
                     // Close connection (by removing from clients)
                     clients.remove(&tid);
                     info!("Client {} was kicked by {}", target_disp_name, client_id);
                 } else {
-                    send_to_client(clients, client_id, &format!("User '{}' not found", target.trim())).await;
+                    send_to_client(
+                        clients,
+                        client_id,
+                        &format!("User '{}' not found", target.trim()),
+                    )
+                    .await;
                 }
             } else {
                 send_to_client(clients, client_id, "Usage: /kick <user>").await;
@@ -202,16 +280,22 @@ pub async fn handle_cmd_with_rooms(
             let total_clients = clients.len();
             let total_rooms = histories.read().await.len();
             let total_messages: usize = histories.read().await.values().map(|v| v.len()).sum();
-            
+
             // Memory Usage (Approximate using /proc/self/statm on Linux)
             let mem_usage = if let Ok(content) = std::fs::read_to_string("/proc/self/statm") {
                 let parts: Vec<&str> = content.split_whitespace().collect();
                 if let Some(pages) = parts.get(1) {
                     if let Ok(pages_cnt) = pages.parse::<usize>() {
-                         format!("{:.2} MB", (pages_cnt * 4) as f64 / 1024.0) // Assuming 4KB pages
-                    } else { "N/A".to_string() }
-                } else { "N/A".to_string() }
-            } else { "N/A".to_string() };
+                        format!("{:.2} MB", (pages_cnt * 4) as f64 / 1024.0) // Assuming 4KB pages
+                    } else {
+                        "N/A".to_string()
+                    }
+                } else {
+                    "N/A".to_string()
+                }
+            } else {
+                "N/A".to_string()
+            };
 
             let stats_msg = format!(
                 "Server Stats:\nClients: {}\nRooms: {}\nMessages: {}\nMem: {}",
@@ -240,7 +324,8 @@ pub async fn handle_cmd_with_rooms(
         }
         "/who" => {
             let room = get_client_room(clients, client_id).await;
-            let user_info: Vec<String> = clients.iter()
+            let user_info: Vec<String> = clients
+                .iter()
                 .filter(|r| r.value().room == room)
                 .map(|r| {
                     let c = r.value();
@@ -248,12 +333,17 @@ pub async fn handle_cmd_with_rooms(
                     format!("{} ({})", c.name, status)
                 })
                 .collect();
-            send_to_client(clients, client_id, &format!("Users in '{}': {}", room, user_info.join(", "))).await;
+            send_to_client(
+                clients,
+                client_id,
+                &format!("Users in '{}': {}", room, user_info.join(", ")),
+            )
+            .await;
         }
         "/nudge" => {
             let from = client_name_by_id(clients, client_id).await;
             let room = get_client_room(clients, client_id).await;
-            
+
             // Broadcast Nudge
             let msg = Outgoing::Nudge { from: from.clone() };
             if let Ok(json) = serde_json::to_string(&msg) {
@@ -263,12 +353,23 @@ pub async fn handle_cmd_with_rooms(
                     }
                 }
             }
-            
+
             // System message announcement
-            send_system_to_room(clients, histories, &room, &format!("{} sent a nudge!", from)).await;
+            send_system_to_room(
+                clients,
+                histories,
+                &room,
+                &format!("{} sent a nudge!", from),
+            )
+            .await;
         }
         _ => {
-            send_to_client(clients, client_id, "Unknown command. Type /help for available commands.").await;
+            send_to_client(
+                clients,
+                client_id,
+                "Unknown command. Type /help for available commands.",
+            )
+            .await;
         }
     }
 }
@@ -294,10 +395,10 @@ pub async fn handle_message_with_rooms(
         deleted: false,
     };
     broadcast_to_room_and_store(clients, histories, &room, item.clone()).await;
-    
+
     // Increment message counter
     metrics.increment_messages();
-    
+
     // Check for URLs and fetch previews
     static URL_RE: std::sync::OnceLock<regex::Regex> = std::sync::OnceLock::new();
     let url_regex = URL_RE.get_or_init(|| regex::Regex::new(r"(https?://\S+)").unwrap());
@@ -307,7 +408,7 @@ pub async fn handle_message_with_rooms(
             let clients_clone = clients.clone();
             let room_clone = room.clone();
             let msg_id = item.id.clone();
-            
+
             // Spawn background task to fetch metadata
             tokio::spawn(async move {
                 if let Some((title, desc, image)) = crate::helpers::fetch_preview(&url).await {
@@ -335,12 +436,19 @@ pub async fn handle_message_with_rooms(
 /// Helper: send system message to a single client.
 async fn send_to_client(clients: &Clients, client_id: &str, text: &str) {
     if let Some(tx) = client_tx_by_id(clients, client_id).await {
-        let msg = Outgoing::System { text: text.to_string() };
-        let _ = tx.send(warp::ws::Message::text(serde_json::to_string(&msg).unwrap()));
+        let msg = Outgoing::System {
+            text: text.to_string(),
+        };
+        if let Ok(payload) = serde_json::to_string(&msg) {
+            let _ = tx.send(warp::ws::Message::text(payload));
+        }
     }
 }
 
 /// Helper: get client's current room.
 async fn get_client_room(clients: &Clients, client_id: &str) -> String {
-    clients.get(client_id).map(|r| r.value().room.clone()).unwrap_or_else(|| "lobby".to_string())
+    clients
+        .get(client_id)
+        .map(|r| r.value().room.clone())
+        .unwrap_or_else(|| "lobby".to_string())
 }

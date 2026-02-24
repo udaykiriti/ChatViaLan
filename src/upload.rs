@@ -1,14 +1,14 @@
 //! File upload handling.
 
 use bytes::Buf;
+use futures::StreamExt;
 use futures::TryStreamExt;
 use serde_json::json;
 use tokio::io::AsyncWriteExt;
+use tracing::{error, info};
 use uuid::Uuid;
 use warp::http::StatusCode;
 use warp::multipart::{FormData, Part};
-use futures::StreamExt;
-use tracing::{info, error};
 
 /// Handle multipart file upload.
 pub async fn handle_upload(form: FormData) -> Result<impl warp::Reply, warp::Rejection> {

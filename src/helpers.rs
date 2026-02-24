@@ -1,15 +1,16 @@
 //! Helper functions for client operations.
 
-use std::time::SystemTime;
+use crate::types::{Clients, Tx};
 use regex::Regex;
 use std::sync::OnceLock;
-use crate::types::{Clients, Tx};
-
-
+use std::time::SystemTime;
 
 /// Get client name by ID.
 pub async fn client_name_by_id(clients: &Clients, id: &str) -> String {
-    clients.get(id).map(|r| r.value().name.clone()).unwrap_or_else(|| id.to_string())
+    clients
+        .get(id)
+        .map(|r| r.value().name.clone())
+        .unwrap_or_else(|| id.to_string())
 }
 
 /// Get client tx channel by ID.
@@ -19,7 +20,10 @@ pub async fn client_tx_by_id(clients: &Clients, id: &str) -> Option<Tx> {
 
 /// Get current Unix timestamp.
 pub fn now_ts() -> u64 {
-    SystemTime::now().duration_since(SystemTime::UNIX_EPOCH).unwrap().as_secs()
+    SystemTime::now()
+        .duration_since(SystemTime::UNIX_EPOCH)
+        .map(|d| d.as_secs())
+        .unwrap_or(0)
 }
 
 pub fn censor_profanity(text: &str) -> String {
@@ -35,7 +39,9 @@ pub async fn make_unique_name(clients: &Clients, desired: &str) -> String {
     let mut candidate = desired.to_string();
     let mut suffix = 1usize;
     loop {
-        let collision = clients.iter().any(|r| r.value().name.eq_ignore_ascii_case(&candidate));
+        let collision = clients
+            .iter()
+            .any(|r| r.value().name.eq_ignore_ascii_case(&candidate));
         if !collision {
             return candidate;
         }
@@ -53,31 +59,42 @@ pub async fn fetch_preview(url: &str) -> Option<(String, String, String)> {
 
     let resp = reqwest::get(url).await.ok()?;
     let html = resp.text().await.ok()?;
-    
+
     let document = scraper::Html::parse_document(&html);
-    
-    let title_selector = TITLE_SEL.get_or_init(|| scraper::Selector::parse("meta[property='og:title']").unwrap());
-    let desc_selector = DESC_SEL.get_or_init(|| scraper::Selector::parse("meta[property='og:description']").unwrap());
-    let image_selector = IMAGE_SEL.get_or_init(|| scraper::Selector::parse("meta[property='og:image']").unwrap());
+
+    let title_selector =
+        TITLE_SEL.get_or_init(|| scraper::Selector::parse("meta[property='og:title']").unwrap());
+    let desc_selector = DESC_SEL
+        .get_or_init(|| scraper::Selector::parse("meta[property='og:description']").unwrap());
+    let image_selector =
+        IMAGE_SEL.get_or_init(|| scraper::Selector::parse("meta[property='og:image']").unwrap());
     let title_tag = TITLE_TAG.get_or_init(|| scraper::Selector::parse("title").unwrap());
 
-    let title = document.select(title_selector).next()
+    let title = document
+        .select(title_selector)
+        .next()
         .and_then(|e| e.value().attr("content"))
         .map(|s| s.to_string())
         .or_else(|| document.select(title_tag).next().map(|e| e.inner_html()))
         .unwrap_or_default();
 
-    let desc = document.select(desc_selector).next()
+    let desc = document
+        .select(desc_selector)
+        .next()
         .and_then(|e| e.value().attr("content"))
         .map(|s| s.to_string())
         .unwrap_or_default();
 
-    let image = document.select(image_selector).next()
+    let image = document
+        .select(image_selector)
+        .next()
         .and_then(|e| e.value().attr("content"))
         .map(|s| s.to_string())
         .unwrap_or_default();
 
-    if title.is_empty() && desc.is_empty() { return None; }
-    
+    if title.is_empty() && desc.is_empty() {
+        return None;
+    }
+
     Some((title, desc, image))
 }

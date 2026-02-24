@@ -1,11 +1,11 @@
 //! Core data types and type aliases for the chat server.
 
+use dashmap::DashMap;
+use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, VecDeque};
 use std::sync::Arc;
 use std::time::Instant;
 use tokio::sync::{mpsc, RwLock};
-use serde::{Deserialize, Serialize};
-use dashmap::DashMap;
 
 /// Sender channel for WebSocket messages to a client.
 pub type Tx = mpsc::UnboundedSender<warp::ws::Message>;
@@ -38,12 +38,12 @@ pub struct Client {
 /// A single message in the chat history.
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct HistoryItem {
-    pub id: String,           // Unique message ID
+    pub id: String, // Unique message ID
     pub from: String,
     pub text: String,
     pub ts: u64,
     #[serde(default)]
-    pub reactions: HashMap<String, Vec<String>>,  // emoji -> [usernames]
+    pub reactions: HashMap<String, Vec<String>>, // emoji -> [usernames]
     #[serde(default)]
     pub edited: bool,
     #[serde(default)]
@@ -54,20 +54,65 @@ pub struct HistoryItem {
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(tag = "type", rename_all = "lowercase")]
 pub enum Outgoing {
-    System { text: String },
-    Msg { id: String, from: String, text: String, ts: u64, reactions: HashMap<String, Vec<String>>, edited: bool },
-    List { users: Vec<String> },
-    History { items: Vec<HistoryItem> },
-    Typing { users: Vec<String> },
-    Reaction { msg_id: String, emoji: String, user: String, added: bool },
-    Edit { msg_id: String, new_text: String },
-    Delete { msg_id: String },
-    ReadReceipt { user: String, last_msg_id: String },
-    Mention { from: String, text: String, mentioned: String },
-    RoomList { rooms: Vec<RoomInfo> },
-    Status { user: String, status: String },
-    LinkPreview { msg_id: String, title: String, description: String, image: String, url: String },
-    Nudge { from: String },
+    System {
+        text: String,
+    },
+    Msg {
+        id: String,
+        from: String,
+        text: String,
+        ts: u64,
+        reactions: HashMap<String, Vec<String>>,
+        edited: bool,
+    },
+    List {
+        users: Vec<String>,
+    },
+    History {
+        items: Vec<HistoryItem>,
+    },
+    Typing {
+        users: Vec<String>,
+    },
+    Reaction {
+        msg_id: String,
+        emoji: String,
+        user: String,
+        added: bool,
+    },
+    Edit {
+        msg_id: String,
+        new_text: String,
+    },
+    Delete {
+        msg_id: String,
+    },
+    ReadReceipt {
+        user: String,
+        last_msg_id: String,
+    },
+    Mention {
+        from: String,
+        text: String,
+        mentioned: String,
+    },
+    RoomList {
+        rooms: Vec<RoomInfo>,
+    },
+    Status {
+        user: String,
+        status: String,
+    },
+    LinkPreview {
+        msg_id: String,
+        title: String,
+        description: String,
+        image: String,
+        url: String,
+    },
+    Nudge {
+        from: String,
+    },
 }
 
 /// Room info for available rooms list.

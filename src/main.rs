@@ -11,27 +11,27 @@
 //! - typing.rs: Typing indicators
 //! - upload.rs: File uploads
 
-mod types;
 mod auth;
-mod room;
-mod commands;
 mod client;
+mod commands;
 mod helpers;
+mod metrics;
 mod rate_limit;
+mod room;
+mod types;
 mod typing;
 mod upload;
-mod metrics;
 
+use dashmap::DashMap;
 use std::collections::{HashMap, VecDeque};
 use std::sync::Arc;
 use tokio::sync::RwLock;
-use dashmap::DashMap;
-use warp::Filter;
 use tracing::{info, warn};
+use warp::Filter;
 
-use crate::types::{Clients, Histories, PrivateHistories, Users};
 use crate::auth::load_users;
 use crate::client::client_connected;
+use crate::types::{Clients, Histories, PrivateHistories, Users};
 use crate::upload::handle_upload;
 
 #[tokio::main]
@@ -72,7 +72,7 @@ async fn main() -> anyhow::Result<()> {
     let private_histories_filter = warp::any().map(move || private_histories_c.clone());
     let users_c = users.clone();
     let users_filter = warp::any().map(move || users_c.clone());
-    
+
     // Metrics filter
     let metrics_c = server_metrics.clone();
     let metrics_filter = warp::any().map(move || metrics_c.clone());
@@ -82,14 +82,16 @@ async fn main() -> anyhow::Result<()> {
         .and(warp::get())
         .and(clients_filter.clone())
         .and(metrics_filter.clone())
-        .map(|clients: crate::types::Clients, metrics: Arc<crate::metrics::ServerMetrics>| {
-            let response = serde_json::json!({
-                "status": "ok",
-                "uptime": metrics.uptime_secs(),
-                "clients": clients.len()
-            });
-            warp::reply::json(&response)
-        });
+        .map(
+            |clients: crate::types::Clients, metrics: Arc<crate::metrics::ServerMetrics>| {
+                let response = serde_json::json!({
+                    "status": "ok",
+                    "uptime": metrics.uptime_secs(),
+                    "clients": clients.len()
+                });
+                warp::reply::json(&response)
+            },
+        );
 
     // Metrics endpoint
     let metrics_route = warp::path("metrics")
@@ -97,20 +99,22 @@ async fn main() -> anyhow::Result<()> {
         .and(clients_filter.clone())
         .and(histories_filter.clone())
         .and(metrics_filter.clone())
-        .and_then(|clients: crate::types::Clients, 
-                   histories: crate::types::Histories, 
-                   metrics: Arc<crate::metrics::ServerMetrics>| async move {
-            let room_count = histories.read().await.len();
-            let response = serde_json::json!({
-                "uptime_seconds": metrics.uptime_secs(),
-                "memory_mb": metrics.memory_usage_mb(),
-                "total_messages": metrics.get_total_messages(),
-                "active_clients": clients.len(),
-                "active_rooms": room_count,
-                "total_connections": metrics.get_total_connections()
-            });
-            Ok::<_, warp::Rejection>(warp::reply::json(&response))
-        });
+        .and_then(
+            |clients: crate::types::Clients,
+             histories: crate::types::Histories,
+             metrics: Arc<crate::metrics::ServerMetrics>| async move {
+                let room_count = histories.read().await.len();
+                let response = serde_json::json!({
+                    "uptime_seconds": metrics.uptime_secs(),
+                    "memory_mb": metrics.memory_usage_mb(),
+                    "total_messages": metrics.get_total_messages(),
+                    "active_clients": clients.len(),
+                    "active_rooms": room_count,
+                    "total_connections": metrics.get_total_connections()
+                });
+                Ok::<_, warp::Rejection>(warp::reply::json(&response))
+            },
+        );
 
     // WebSocket route
     let ws_route = warp::path("ws")
@@ -121,9 +125,21 @@ async fn main() -> anyhow::Result<()> {
         .and(private_histories_filter)
         .and(users_filter)
         .and(metrics_filter)
-        .map(|ws: warp::ws::Ws, remote, clients, histories, private_histories, users, metrics| {
-            ws.on_upgrade(move |socket| client_connected(socket, remote, clients, histories, private_histories, users, metrics))
-        });
+        .map(
+            |ws: warp::ws::Ws, remote, clients, histories, private_histories, users, metrics| {
+                ws.on_upgrade(move |socket| {
+                    client_connected(
+                        socket,
+                        remote,
+                        clients,
+                        histories,
+                        private_histories,
+                        users,
+                        metrics,
+                    )
+                })
+            },
+        );
 
     // Static file routes
     let index_route = warp::path::end().and(warp::fs::file("static/index.html"));
@@ -157,32 +173,33 @@ async fn main() -> anyhow::Result<()> {
         .ok()
         .and_then(|p| p.parse().ok())
         .unwrap_or(8080);
-    
-    // Start mDNS Responder (for LAN discovery)
-    // Start mDNS Responder (for LAN discovery)
-    let mdns = mdns_sd::ServiceDaemon::new().expect("Failed to create mDNS daemon");
+
+    // Start mDNS responder (for LAN discovery) without crashing on environments
+    // that don't support it.
     let service_type = "_http._tcp.local.";
     let instance_name = "RustChat";
     let hostname = "rustchat.local.";
-    
-    // Minimal properties for iOS
-    let mut txt_props = HashMap::new();
-    txt_props.insert("path".to_string(), "/".to_string());
+    if let Ok(mdns) = mdns_sd::ServiceDaemon::new() {
+        // Minimal properties for iOS
+        let mut txt_props = HashMap::new();
+        txt_props.insert("path".to_string(), "/".to_string());
 
-    let service_info = mdns_sd::ServiceInfo::new(
-        service_type,
-        instance_name,
-        hostname,
-        "", 
-        port,
-        txt_props,
-    ).expect("valid service info");
-    
-    // Register and keep alive
-    mdns.register(service_info).expect("Failed to register mDNS service");
-    info!("mDNS registered: {}.{}", instance_name, service_type);
-    println!("Broadcast (mDNS): http://rustchat.local:{}", port);
-    println!("(Note: If mDNS fails, check local firewall: UDP 5353 must be open)");
+        match mdns_sd::ServiceInfo::new(service_type, instance_name, hostname, "", port, txt_props)
+        {
+            Ok(service_info) => {
+                if let Err(e) = mdns.register(service_info) {
+                    warn!("failed to register mDNS service: {}", e);
+                } else {
+                    info!("mDNS registered: {}.{}", instance_name, service_type);
+                    println!("Broadcast (mDNS): http://rustchat.local:{}", port);
+                    println!("(Note: If mDNS fails, check local firewall: UDP 5353 must be open)");
+                }
+            }
+            Err(e) => warn!("invalid mDNS service info: {}", e),
+        }
+    } else {
+        warn!("mDNS daemon unavailable; continuing without local discovery");
+    }
 
     // Background task for idle detection
     let clients_idle = clients.clone();
@@ -201,13 +218,17 @@ async fn main() -> anyhow::Result<()> {
                 let last_active = client.last_active;
                 let diff = now.duration_since(last_active);
 
-                let current_status = if diff.as_secs() > 300 { // 5 minutes
+                let current_status = if diff.as_secs() > 300 {
+                    // 5 minutes
                     "idle"
                 } else {
                     "active"
                 };
 
-                let prev_status = statuses.get(&client_id).map(|s| s.as_str()).unwrap_or("active");
+                let prev_status = statuses
+                    .get(&client_id)
+                    .map(|s| s.as_str())
+                    .unwrap_or("active");
                 if current_status != prev_status {
                     updates.push((client.name.clone(), current_status.to_string()));
                     statuses.insert(client_id, current_status.to_string());
@@ -217,7 +238,7 @@ async fn main() -> anyhow::Result<()> {
             for (name, status) in updates {
                 crate::room::broadcast_status(&clients_idle, &name, &status).await;
             }
-            
+
             // Cleanup statuses for disconnected clients
             statuses.retain(|id, _| clients_idle.contains_key(id));
         }
@@ -239,14 +260,16 @@ async fn main() -> anyhow::Result<()> {
         println!("\n\x1b[32m========================================\x1b[0m");
         println!("LAN CONNECT: Scan this to join!");
         println!("\x1b[32m========================================\x1b[0m");
-        qr2term::print_qr(address.clone()).unwrap();
+        if let Err(e) = qr2term::print_qr(address.clone()) {
+            warn!("failed to render QR code: {}", e);
+        }
         println!("Server URL: {}\n", address);
     } else {
         println!("Could not detect local IP. Use http://localhost:{}", port);
     }
 
     info!("Server running at http://0.0.0.0:{}/", port);
-    
+
     // Server task
     let server = warp::serve(routes).run(([0, 0, 0, 0], port));
 
@@ -257,7 +280,7 @@ async fn main() -> anyhow::Result<()> {
         }
         _ = tokio::signal::ctrl_c() => {
             info!("Shutdown signal received. Cleaning up...");
-            
+
             // Save history
             crate::room::save_history(&histories).await;
 

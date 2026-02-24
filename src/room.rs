@@ -1,10 +1,10 @@
 //! Room management: broadcasting, history, and room switching.
 
-use std::collections::{HashMap, VecDeque};
-use uuid::Uuid;
-use tracing::{info, error};
-use crate::types::{Clients, Histories, HistoryItem, Outgoing, Tx};
 use crate::helpers::{client_name_by_id, client_tx_by_id, now_ts};
+use crate::types::{Clients, Histories, HistoryItem, Outgoing, Tx};
+use std::collections::{HashMap, VecDeque};
+use tracing::{error, info};
+use uuid::Uuid;
 
 /// Generate unique message ID.
 pub fn generate_msg_id() -> String {
@@ -13,7 +13,9 @@ pub fn generate_msg_id() -> String {
 
 /// Send a system message to all users in a room and record to history.
 pub async fn send_system_to_room(clients: &Clients, histories: &Histories, room: &str, text: &str) {
-    let msg = Outgoing::System { text: text.to_string() };
+    let msg = Outgoing::System {
+        text: text.to_string(),
+    };
     let item = HistoryItem {
         id: generate_msg_id(),
         from: "system".to_string(),
@@ -64,8 +66,10 @@ pub async fn send_user_list_to_room(clients: &Clients, room: &str) {
         .filter(|r| r.value().room == room)
         .map(|r| r.value().name.clone())
         .collect();
-    
-    let msg = Outgoing::List { users: names.clone() };
+
+    let msg = Outgoing::List {
+        users: names.clone(),
+    };
     let s = serde_json::to_string(&msg).unwrap_or_default();
 
     for r in clients.iter() {
@@ -74,7 +78,11 @@ pub async fn send_user_list_to_room(clients: &Clients, room: &str) {
             let _ = c.tx.send(warp::ws::Message::text(s.clone()));
         }
     }
-    info!("Broadcast user list for room '{}': {} users", room, names.len());
+    info!(
+        "Broadcast user list for room '{}': {} users",
+        room,
+        names.len()
+    );
 }
 
 /// Broadcast a message to all clients in a room and store in history.
@@ -86,10 +94,10 @@ pub async fn broadcast_to_room_and_store(
     item: HistoryItem,
 ) -> String {
     let msg_id = item.id.clone();
-    
+
     // Check for @mentions
     let mentions = extract_mentions(&item.text);
-    
+
     {
         let mut locked_h = histories.write().await;
         let q = locked_h
@@ -115,7 +123,7 @@ pub async fn broadcast_to_room_and_store(
                 let _ = c.tx.send(warp::ws::Message::text(s.clone()));
             }
         }
-        
+
         // Send mention notifications to mentioned users
         for mentioned in &mentions {
             for r in clients.iter() {
@@ -133,7 +141,7 @@ pub async fn broadcast_to_room_and_store(
             }
         }
     }
-    
+
     msg_id
 }
 
@@ -158,7 +166,10 @@ pub async fn add_reaction(
         let mut locked_h = histories.write().await;
         if let Some(q) = locked_h.get_mut(room) {
             if let Some(item) = q.iter_mut().find(|i| i.id == msg_id) {
-                let users = item.reactions.entry(emoji.to_string()).or_insert_with(Vec::new);
+                let users = item
+                    .reactions
+                    .entry(emoji.to_string())
+                    .or_insert_with(Vec::new);
                 if users.contains(&user.to_string()) {
                     users.retain(|u| u != user);
                     false
@@ -173,7 +184,7 @@ pub async fn add_reaction(
             return;
         }
     };
-    
+
     // Broadcast reaction update
     let msg = Outgoing::Reaction {
         msg_id: msg_id.to_string(),
@@ -214,7 +225,7 @@ pub async fn edit_message(
             false
         }
     };
-    
+
     if edited {
         let msg = Outgoing::Edit {
             msg_id: msg_id.to_string(),
@@ -229,7 +240,7 @@ pub async fn edit_message(
             }
         }
     }
-    
+
     edited
 }
 
@@ -254,7 +265,7 @@ pub async fn delete_message(
             false
         }
     };
-    
+
     if deleted {
         let msg = Outgoing::Delete {
             msg_id: msg_id.to_string(),
@@ -268,7 +279,7 @@ pub async fn delete_message(
             }
         }
     }
-    
+
     deleted
 }
 
@@ -299,6 +310,9 @@ pub async fn join_room(client_id: &str, room: &str, clients: &Clients, histories
     let old_room = {
         if let Some(mut c) = clients.get_mut(client_id) {
             let old = c.room.clone();
+            if old == target {
+                return;
+            }
             c.room = target.to_string();
             old
         } else {
@@ -316,11 +330,23 @@ pub async fn join_room(client_id: &str, room: &str, clients: &Clients, histories
 
     // Announce leave in old room
     let name = client_name_by_id(clients, client_id).await;
-    send_system_to_room(clients, histories, &old_room, &format!("-- {} left the room --", name)).await;
+    send_system_to_room(
+        clients,
+        histories,
+        &old_room,
+        &format!("-- {} left the room --", name),
+    )
+    .await;
     send_user_list_to_room(clients, &old_room).await;
 
     // Announce join in new room
-    send_system_to_room(clients, histories, target, &format!("-- {} joined the room --", name)).await;
+    send_system_to_room(
+        clients,
+        histories,
+        target,
+        &format!("-- {} joined the room --", name),
+    )
+    .await;
     if let Some(tx) = client_tx_by_id(clients, client_id).await {
         send_history_to_client_room(&tx, histories, target).await;
     }
@@ -331,9 +357,9 @@ pub async fn join_room(client_id: &str, room: &str, clients: &Clients, histories
         let msg = Outgoing::System {
             text: format!("You joined room '{}'", target),
         };
-        let _ = tx.send(warp::ws::Message::text(
-            serde_json::to_string(&msg).unwrap(),
-        ));
+        if let Ok(payload) = serde_json::to_string(&msg) {
+            let _ = tx.send(warp::ws::Message::text(payload));
+        }
     }
     info!("Client {} joined room '{}'", name, target);
 }

@@ -1,8 +1,8 @@
 //! Rate limiting for message spam prevention.
 
+use crate::types::{Clients, Outgoing};
 use std::time::{Duration, Instant};
 use tracing::warn;
-use crate::types::{Clients, Outgoing};
 
 /// Check rate limit: max 5 messages in 10 seconds.
 /// Returns true if message is allowed, false if rate limited.
@@ -11,10 +11,12 @@ pub async fn check_rate_limit(clients: &Clients, client_id: &str) -> bool {
         let client = r.value_mut();
         let now = Instant::now();
         let window = Duration::from_secs(10);
-        
+
         // Remove old timestamps outside 10-second window
-        client.last_message_times.retain(|t| now.duration_since(*t) < window);
-        
+        client
+            .last_message_times
+            .retain(|t| now.duration_since(*t) < window);
+
         if client.last_message_times.len() >= 5 {
             // Rate limited - send warning to client
             warn!("Client {} is rate limited", client.name);
@@ -26,7 +28,7 @@ pub async fn check_rate_limit(clients: &Clients, client_id: &str) -> bool {
             }
             return false;
         }
-        
+
         client.last_message_times.push(now);
     }
     true

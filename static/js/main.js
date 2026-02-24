@@ -12,13 +12,10 @@ function init() {
     updateInputState();
     connect();
 
-    // Register Service Worker for PWA (lower priority)
-    // NUCLEAR CACHE CLEAR: Unregister all service workers to force update
+    // Register service worker for PWA support
     if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.getRegistrations().then(function (registrations) {
-            for (let registration of registrations) {
-                registration.unregister();
-            }
+        navigator.serviceWorker.register('/sw.js').catch(function (err) {
+            console.warn('Service worker registration failed:', err);
         });
     }
 

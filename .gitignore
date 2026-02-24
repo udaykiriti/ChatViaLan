@@ -25,7 +25,8 @@
 Thumbs.db
 
 # Project-specific
-*.json
+history.json
+users.json
 uploads/
 *.db
 *.sqlite
