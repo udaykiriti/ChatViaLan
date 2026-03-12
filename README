@@ -1,0 +1,34 @@
+rust-chat
+=========
+
+Chat with people on your local network. 
+No sign-ups, no servers in the cloud, no tracking. 
+Just run it and share the link or QR code.
+
+- Works in any browser. Guests can jump in with just a name. 
+- Accounts are optional and stored locally.
+
+- On startup a QR code is printed in the terminal.
+- Point a phone camera at it and you are in. 
+- No typing the IP address.
+
+Has rooms, direct messages, file sharing, reactions, typing indicators,
+link previews, @mentions, and a nudge that shakes the screen. Installable
+as a PWA on phones and desktops so it feels like a native app.
+
+BUILDING
+--------
+Requires Rust 1.75+.
+
+    cargo run --release
+
+* Server starts on http://localhost:8080
+* Scan the QR code in the terminal to connect from mobile.
+
+DOCS
+----
+See docs/ for full documentation.
+
+LICENSE
+-------
+MIT -- see LICENSE
