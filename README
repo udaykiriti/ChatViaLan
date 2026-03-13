@@ -12,9 +12,10 @@ Just run it and share the link or QR code.
 - Point a phone camera at it and you are in. 
 - No typing the IP address.
 
-Has rooms, direct messages, file sharing, reactions, typing indicators,
-link previews, @mentions, and a nudge that shakes the screen. Installable
-as a PWA on phones and desktops so it feels like a native app.
+Has rooms, direct messages, file sharing, reactions, typing indicators, 
+link previews, @mentions, and a nudge that shakes the screen. 
+Installable as a PWA on phones and desktops.
+so it feels like a native app.
 
 BUILDING
 --------
